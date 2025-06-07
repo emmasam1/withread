@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Button, Input, Divider } from "antd";
 import { motion } from "framer-motion";
+import { useAuth } from "../context/context";
 
 // import ForYou from "@/components/home/ForYou";
 import ForYou from "./components/home/ForYou";
@@ -20,6 +21,7 @@ const Following = () => (
 
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
+  const { isLoggedIn, login, logout } = useAuth();
 
   const tabs = [
     { key: "1", label: "For you", content: <ForYou /> },
@@ -56,28 +58,30 @@ const Page = () => {
           </div>
 
           {/* Post Input Box */}
-          <div className="bg-white rounded-lg p-3 mb-6">
-            <div className="flex items-center gap-5">
-              <Image
-                src="/images/Rectangle.png"
-                alt="user image"
-                width={45}
-                height={45}
-                className="rounded"
-              />
-              <Input
-                placeholder="Got something on your mind? Spill it out"
-                className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none"
-              />
+          {isLoggedIn && (
+            <div className="bg-white rounded-lg p-3 mb-6">
+              <div className="flex items-center gap-5">
+                <Image
+                  src="/images/Rectangle.png"
+                  alt="user image"
+                  width={45}
+                  height={45}
+                  className="rounded"
+                />
+                <Input
+                  placeholder="Got something on your mind? Spill it out"
+                  className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none"
+                />
+              </div>
+              <Divider className="!bg-[#f6f6f6b3]" />
+              <div className="flex items-center justify-between">
+                <div></div>
+                <Button className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8">
+                  Post
+                </Button>
+              </div>
             </div>
-            <Divider className="!bg-[#f6f6f6b3]" />
-            <div className="flex items-center justify-between">
-              <div></div>
-              <Button className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8">
-                Post
-              </Button>
-            </div>
-          </div>
+          )}
 
           {/* Tab Content */}
           <div>{tabs.find((tab) => tab.key === activeTab)?.content}</div>
