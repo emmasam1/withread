@@ -1,13 +1,18 @@
 "use client";
 
-import { Form, Input, Button, Checkbox, Row, Col } from "antd";
+import { Form, Input, Button, Row, Col } from "antd";
 import Image from "next/image";
-import Link from "next/link";
 import React from "react";
+import { useRouter } from "next/navigation";
+
 
 const Page = () => {
+
+    const router = useRouter();
+
   const onFinish = (values) => {
     console.log("Success:", values);
+    router.push("/verify-otp");
   };
 
   const onFinishFailed = (errorInfo) => {
