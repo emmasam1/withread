@@ -189,11 +189,12 @@ export default function DashboardLayout({ children }) {
         // title="Basic Modal"
         closable={{ "aria-label": "Custom Close Button" }}
         open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)} 
         footer={false}
         className="!rounded-0"
         width={400}
       >
-        <div className="flex justify-center">
+        <div className="flex justify-center pt-6">
           <Image
             src="/images/login_logo.png"
             alt="logo"
