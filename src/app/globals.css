@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+.ant-dropdown .css-dev-only-do-not-override-mc1tut {
+  position: absolute;
+  bottom: -16px;
+  right: -168px;
+  background-color: #0A0E16;
+  width: 200px;
+}

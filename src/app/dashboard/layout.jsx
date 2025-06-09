@@ -1,12 +1,8 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import {
-  UserOutlined,
-  LeftOutlined,
-  RightOutlined,
-} from "@ant-design/icons";
+import { UserOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import {
   Button,
   Layout,
@@ -31,8 +27,6 @@ export default function DashboardLayout({ children }) {
   const { API_BASE_URL, setLoading, loading, setUser, user, setToken } =
     useApp();
   const [collapsed, setCollapsed] = useState(false);
-  const dropdownRef = useRef(null);
-  const [visible, setVisible] = useState(false);
   const router = useRouter();
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -45,32 +39,101 @@ export default function DashboardLayout({ children }) {
     setIsModalOpen(true);
   };
 
-const items = [
-  {
-    key: '1',
-    label: (
-      <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
-        1st menu item
-      </a>
-    ),
-  },
-  {
-    key: '2',
-    label: (
-      <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
-        2nd menu item
-      </a>
-    ),
-  },
-  {
-    key: '3',
-    label: (
-      <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
-        3rd menu item
-      </a>
-    ),
-  },
-];
+  const Logout = () => {
+  // Clear user data from context and sessionStorage
+  setUser(null);
+  setToken(null);
+  sessionStorage.removeItem("user");
+  sessionStorage.removeItem("token");
+
+  // Optionally redirect to login or homepage
+  router.push("/dashboard"); // or "/" or wherever appropriate
+};
+
+
+  const items = [
+    {
+      key: "1",
+      label: (
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://www.antgroup.com"
+          className="flex !text-[#D9D9D9] items-center gap-3"
+        >
+          <Image src="/images/profile.png" alt="icon" width={17} height={10} />{" "}
+          Profile
+        </a>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://www.aliyun.com"
+          className="flex !text-[#D9D9D9] items-center gap-3"
+        >
+          <Image
+            src="/images/User_menu.png"
+            alt="icon"
+            width={17}
+            height={10}
+          />
+          Account Settings
+        </a>
+      ),
+    },
+    {
+      key: "3",
+      label: (
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          href="https://www.luohanacademy.com"
+          className="flex !text-[#D9D9D9] items-center gap-3"
+        >
+          <Image
+            src="/images/Headphones.png"
+            alt="icon"
+            width={17}
+            height={10}
+          />
+          Help Support
+        </a>
+      ),
+    },
+    {
+      key: "4",
+      label: (
+        <a className="flex !text-[#FF9E80] items-center gap-3" onClick={Logout}>
+          <Image src="/images/logout.png" alt="icon" width={17} height={10} />
+          Sign Out
+        </a>
+      ),
+    },
+  ];
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = sessionStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error("Error parsing stored user:", error);
+        }
+      }
+    }
+  }, []);
+
+  console.log(user?.avatar);
+
+  const initials = `${user?.firstName?.[0] || ""}${
+    user?.lastName?.[0] || ""
+  }`.toUpperCase();
 
   const onFinish = async (values) => {
     const url = `${API_BASE_URL}/api/auth/login`;
@@ -129,17 +192,24 @@ const items = [
           top: 0,
           bottom: 0,
           zIndex: 100,
+          background: "#0A0E16",
         }}
       >
         <Menu
-          theme="dark"
+          theme="#0A0E16"
           mode="inline"
           defaultSelectedKeys={["1"]}
           items={[
             {
               key: "1",
-              icon: <UserOutlined />,
-              label: <Link href="/dashboard">Home</Link>,
+              icon: (
+                <Image src="/images/Home.png" alt="" width={20} height={20} />
+              ),
+              label: (
+                <Link href="/dashboard" className="!text-[#D9D9D9]">
+                  Home
+                </Link>
+              ),
             },
             {
               key: "2",
@@ -151,7 +221,11 @@ const items = [
                   height={20}
                 />
               ),
-              label: <Link href="/dashboard/discover">About</Link>,
+              label: (
+                <Link href="/dashboard/discover" className="!text-[#D9D9D9]">
+                  Discover
+                </Link>
+              ),
             },
             {
               key: "3",
@@ -163,21 +237,38 @@ const items = [
                   height={20}
                 />
               ),
-              label: <Link href="/dashboard/activity">Activity</Link>,
+              label: (
+                <Link href="/dashboard/activity" className="!text-[#D9D9D9]">
+                  Activity
+                </Link>
+              ),
             },
             {
               key: "4",
               icon: (
-                <Image src="/images/sms.png" alt="" width={20} height={20} />
+                <Image
+                  src="/images/sms_menu.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                />
               ),
-              label: <Link href="/dashboard/message">Message</Link>,
+              label: (
+                <Link href="/dashboard/message" className="!text-[#D9D9D9]">
+                  Message
+                </Link>
+              ),
             },
             {
               key: "5",
               icon: (
                 <Image src="/images/people.png" alt="" width={20} height={20} />
               ),
-              label: <Link href="/dashboard/communities">Communities</Link>,
+              label: (
+                <Link href="/dashboard/communities" className="!text-[#D9D9D9]">
+                  Communities
+                </Link>
+              ),
             },
             {
               key: "6",
@@ -189,7 +280,11 @@ const items = [
                   height={20}
                 />
               ),
-              label: <Link href="/dashboard/settings">Settings</Link>,
+              label: (
+                <Link href="/dashboard/settings" className="!text-[#D9D9D9]">
+                  Settings
+                </Link>
+              ),
             },
           ]}
         />
@@ -211,11 +306,39 @@ const items = [
             )
           }
         />
-        <div className="bg-amber-600 absolute bottom-0">
-          <Dropdown menu={{ items }} placement="topRight">
-        <Button>topRight</Button>
-      </Dropdown>
-        </div>
+       {user ?  <div className="absolute bottom-5  px-4" trigger={["click"]}>
+          <Dropdown menu={{ items }} placement="Right" trigger={["click"]}>
+            <div className="flex items-center gap-2 cursor-pointer">
+              {user?.avatar ? (
+                <Image
+                  src={user?.avatar} // fallback in case avatar is null
+                  alt="user image"
+                  width={45}
+                  height={45}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="!bg-[#F6F6F6]  rounded-full p-2 w-12 h-12 flex justify-center items-center">
+                  <h1 className="font-semibold text-gray-400">{initials}</h1>
+                </div>
+              )}
+              <div>
+                <h1
+                  className={`${collapsed ? "hidden" : "block"} font-semibold`}
+                >
+                  {user?.firstName} {user?.lastName}
+                </h1>
+
+                <p></p>
+              </div>
+              <RightOutlined
+                className={`${
+                  collapsed ? "hidden" : "block relative -right-5"
+                }`}
+              />
+            </div>
+          </Dropdown>
+        </div> : null}
       </Sider>
 
       {/* Main layout shifted right to account for fixed Sider */}
