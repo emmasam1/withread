@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import {
-  UploadOutlined,
   UserOutlined,
-  VideoCameraOutlined,
   LeftOutlined,
   RightOutlined,
 } from "@ant-design/icons";
@@ -18,13 +16,24 @@ import {
   Modal,
   Form,
   Checkbox,
+  Dropdown,
 } from "antd";
 import Image from "next/image";
+import { useApp } from "../context/context";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useRouter } from "next/navigation";
 
 const { Header, Sider, Content } = Layout;
 
 export default function DashboardLayout({ children }) {
+  const { API_BASE_URL, setLoading, loading, setUser, user, setToken } =
+    useApp();
   const [collapsed, setCollapsed] = useState(false);
+  const dropdownRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const router = useRouter();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -36,8 +45,70 @@ export default function DashboardLayout({ children }) {
     setIsModalOpen(true);
   };
 
-  const onFinish = (values) => {
-    console.log("Success:", values);
+const items = [
+  {
+    key: '1',
+    label: (
+      <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
+        1st menu item
+      </a>
+    ),
+  },
+  {
+    key: '2',
+    label: (
+      <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
+        2nd menu item
+      </a>
+    ),
+  },
+  {
+    key: '3',
+    label: (
+      <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
+        3rd menu item
+      </a>
+    ),
+  },
+];
+
+  const onFinish = async (values) => {
+    const url = `${API_BASE_URL}/api/auth/login`;
+    setLoading(true);
+
+    try {
+      const res = await axios.post(url, values);
+      console.log("Login response:", res);
+
+      const user = res.data.user;
+      const token = res.data.token;
+
+      setUser(user);
+      setToken(token);
+
+      sessionStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("token", token); // ✅ don't stringify if it's already a string
+
+      if (user.interests.length < 1) {
+        router.push("/interest");
+      } else {
+        router.push("/dashboard");
+      }
+
+      toast.success("Login successful!");
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Caught error in login:", error);
+
+      const message =
+        error?.response?.data?.message ||
+        error.message ||
+        "Login failed. Try again.";
+
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
   const onFinishFailed = (errorInfo) => {
     console.log("Failed:", errorInfo);
@@ -72,27 +143,52 @@ export default function DashboardLayout({ children }) {
             },
             {
               key: "2",
-              icon: <Image src="/images/Compass.png" alt="" width={20} height={20}/>,
+              icon: (
+                <Image
+                  src="/images/Compass.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                />
+              ),
               label: <Link href="/dashboard/discover">About</Link>,
             },
             {
               key: "3",
-              icon: <Image src="/images/Document.png" alt="" width={20} height={20}/>,
+              icon: (
+                <Image
+                  src="/images/Document.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                />
+              ),
               label: <Link href="/dashboard/activity">Activity</Link>,
             },
             {
               key: "4",
-              icon: <Image src="/images/sms.png" alt="" width={20} height={20}/>,
+              icon: (
+                <Image src="/images/sms.png" alt="" width={20} height={20} />
+              ),
               label: <Link href="/dashboard/message">Message</Link>,
             },
             {
               key: "5",
-              icon: <Image src="/images/people.png" alt="" width={20} height={20}/>,
+              icon: (
+                <Image src="/images/people.png" alt="" width={20} height={20} />
+              ),
               label: <Link href="/dashboard/communities">Communities</Link>,
             },
             {
               key: "6",
-              icon: <Image src="/images/setting.png" alt="" width={20} height={20}/>,
+              icon: (
+                <Image
+                  src="/images/setting.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                />
+              ),
               label: <Link href="/dashboard/settings">Settings</Link>,
             },
           ]}
@@ -115,6 +211,11 @@ export default function DashboardLayout({ children }) {
             )
           }
         />
+        <div className="bg-amber-600 absolute bottom-0">
+          <Dropdown menu={{ items }} placement="topRight">
+        <Button>topRight</Button>
+      </Dropdown>
+        </div>
       </Sider>
 
       {/* Main layout shifted right to account for fixed Sider */}
@@ -151,13 +252,28 @@ export default function DashboardLayout({ children }) {
             />
           </div>
           <div className="flex items-center gap-2.5">
-            <Button
-              className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
-              onClick={showModal}
-            >
-              {/* <Image src="/images/add.png" width={20} height={20} alt="icon" /> */}
-              Login
-            </Button>
+            {user ? (
+              <Button
+                className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
+                // onClick={showModal}
+              >
+                <Image
+                  src="/images/add.png"
+                  width={20}
+                  height={20}
+                  alt="icon"
+                />
+                New Post
+              </Button>
+            ) : (
+              <Button
+                className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
+                onClick={showModal}
+              >
+                Login
+              </Button>
+            )}
+
             <div className="bg-[#F3F3F4] rounded-full p-2">
               <Image src="/images/sms.png" width={20} height={20} alt="icon" />
             </div>
@@ -189,7 +305,7 @@ export default function DashboardLayout({ children }) {
         // title="Basic Modal"
         closable={{ "aria-label": "Custom Close Button" }}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)} 
+        onCancel={() => setIsModalOpen(false)}
         footer={false}
         className="!rounded-0"
         width={400}
@@ -217,7 +333,7 @@ export default function DashboardLayout({ children }) {
         >
           <Form.Item
             label="Email Address Or Username"
-            name="username"
+            name="email"
             className="!mb-3"
             rules={[
               {
@@ -243,13 +359,16 @@ export default function DashboardLayout({ children }) {
               <Checkbox>Keep me logged in</Checkbox>
             </Form.Item>
 
-            <Link href="#" className="!text-gray-400 -mt-6">Forget Password?</Link>
+            <Link href="#" className="!text-gray-400 -mt-6">
+              Forget Password?
+            </Link>
           </div>
 
           <Form.Item>
             <Button
               type="primary"
               htmlType="submit"
+              loading={loading}
               className="!bg-[#141823] !rounded-full !w-full !py-5"
             >
               Log in now
@@ -270,8 +389,12 @@ export default function DashboardLayout({ children }) {
             </Button>
           </Form.Item>
         </Form>
-        <p className="text-center">Don’t have an account? <Link href='/signup'>Sign Up</Link></p>
+        <p className="text-center">
+          Don’t have an account? <Link href="/signup">Sign Up</Link>
+        </p>
       </Modal>
+
+      <ToastContainer />
     </div>
   );
 }

@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button, Input, Divider } from "antd";
 import { motion } from "framer-motion";
 import { useApp } from "../context/context";
-
 
 // import ForYou from "@/components/home/ForYou";
 import ForYou from "./components/home/ForYou";
@@ -22,13 +21,31 @@ const Following = () => (
 
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
- const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading  } = useApp();
+  const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
 
   const tabs = [
     { key: "1", label: "For you", content: <ForYou /> },
     { key: "2", label: "Featured", content: <Featured /> },
     { key: "3", label: "Following", content: <Following /> },
   ];
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = sessionStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error("Error parsing stored user:", error);
+        }
+      }
+    }
+  }, []);
+
+  const initials = `${user?.firstName?.[0] || ""}${
+    user?.lastName?.[0] || ""
+  }`.toUpperCase();
 
   return (
     <div className="grid grid-cols-[2fr_500px] h-screen ">
@@ -63,13 +80,21 @@ const Page = () => {
               {/* Post Input Box */}
               <div className="bg-white rounded-lg p-3 mb-6">
                 <div className="flex items-center gap-5">
-                  <Image
-                    src="/images/Rectangle.png"
-                    alt="user image"
-                    width={45}
-                    height={45}
-                    className="rounded"
-                  />
+                  {user.avatar ? (
+                    <Image
+                      src={user?.avatar} // fallback in case avatar is null
+                      alt="user image"
+                      width={45}
+                      height={45}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="!bg-[#F6F6F6]  rounded-full p-2 w-12 h-12 flex justify-center items-center">
+                      <h1 className="font-semibold text-gray-400">
+                        {initials}
+                      </h1>
+                    </div>
+                  )}
                   <Input
                     placeholder="Got something on your mind? Spill it out"
                     className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none"
