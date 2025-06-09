@@ -4,17 +4,49 @@ import { Form, Input, Button } from "antd";
 import Image from "next/image";
 import React from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { useApp } from "../context/context";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Page = () => {
+  const { API_BASE_URL, setLoading, loading, setUser, setToken } = useApp();
   const router = useRouter();
 
-  const onFinish = (values) => {
-    console.log("Success:", values);
-    router.push("/verify-otp");
+  const onFinish = async (values) => {
+    const url = `${API_BASE_URL}/api/auth/login`;
+    setLoading(true);
+
+    try {
+      const res = await axios.post(url, values);
+      const user = res.data.user;
+      const token = res.data.token;
+
+      toast.success("Login successful!");
+
+      setUser(user);
+      setToken(token);
+
+      sessionStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("token", JSON.stringify(token));
+
+      if (user.interests.length < 1) {
+        router.push("/interest");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Login failed. Try again.";
+      toast.error(message);
+      console.error("Login error:", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onFinishFailed = (errorInfo) => {
-    console.log("Failed:", errorInfo);
+    console.log("Validation Failed:", errorInfo);
   };
 
   return (
@@ -49,10 +81,9 @@ const Page = () => {
             Welcome Back to Withread!
           </h1>
 
-          {/* Wrap form in a container with max width */}
           <div className="w-full max-w-[400px]">
             <Form
-              name="register"
+              name="login"
               layout="vertical"
               initialValues={{ remember: true }}
               onFinish={onFinish}
@@ -67,6 +98,10 @@ const Page = () => {
                   {
                     required: true,
                     message: "Please enter your email address!",
+                  },
+                  {
+                    type: "email",
+                    message: "Please enter a valid email!",
                   },
                 ]}
               >
@@ -91,6 +126,7 @@ const Page = () => {
                 <Button
                   type="primary"
                   htmlType="submit"
+                  loading={loading}
                   className="!bg-[#141823] !rounded-full !w-full !py-5 mt-4"
                 >
                   Sign in
@@ -126,6 +162,8 @@ const Page = () => {
           backgroundRepeat: "no-repeat",
         }}
       ></div>
+
+      <ToastContainer />
     </div>
   );
 };

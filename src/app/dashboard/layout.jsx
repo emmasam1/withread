@@ -72,27 +72,27 @@ export default function DashboardLayout({ children }) {
             },
             {
               key: "2",
-              icon: <VideoCameraOutlined />,
-              label: <Link href="/dashboard/about">About</Link>,
+              icon: <Image src="/images/Compass.png" alt="" width={20} height={20}/>,
+              label: <Link href="/dashboard/discover">About</Link>,
             },
             {
               key: "3",
-              icon: <UploadOutlined />,
+              icon: <Image src="/images/Document.png" alt="" width={20} height={20}/>,
               label: <Link href="/dashboard/activity">Activity</Link>,
             },
             {
               key: "4",
-              icon: <UploadOutlined />,
+              icon: <Image src="/images/sms.png" alt="" width={20} height={20}/>,
               label: <Link href="/dashboard/message">Message</Link>,
             },
             {
               key: "5",
-              icon: <UploadOutlined />,
+              icon: <Image src="/images/people.png" alt="" width={20} height={20}/>,
               label: <Link href="/dashboard/communities">Communities</Link>,
             },
             {
               key: "6",
-              icon: <UploadOutlined />,
+              icon: <Image src="/images/setting.png" alt="" width={20} height={20}/>,
               label: <Link href="/dashboard/settings">Settings</Link>,
             },
           ]}

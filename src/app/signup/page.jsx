@@ -4,15 +4,33 @@ import { Form, Input, Button, Row, Col } from "antd";
 import Image from "next/image";
 import React from "react";
 import { useRouter } from "next/navigation";
-
+import axios from "axios";
+import { useApp } from "../context/context";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Page = () => {
+  const { API_BASE_URL, setLoading, loading } = useApp();
 
-    const router = useRouter();
+  const router = useRouter();
 
-  const onFinish = (values) => {
-    console.log("Success:", values);
-    router.push("/verify-otp");
+  const onFinish = async (values) => {
+    const url = `${API_BASE_URL}/api/auth/signup`;
+
+    setLoading(true);
+    try {
+      const res = await axios.post(url, values);
+      toast.success("Signup successful. Check your email.");
+      console.log(res)
+      // router.push("/verify-otp");
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Signup failed. Try again.";
+      toast.error(message);
+      console.error("Signup error:", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onFinishFailed = (errorInfo) => {
@@ -20,9 +38,9 @@ const Page = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[2fr_600px]">
+    <div className="grid grid-cols-1 md:grid-cols-[2fr_600px] h-screen">
       {/* Left Column */}
-      <div className="p-4 bg-white h-screen relative overflow-y-auto">
+      <div className="p-4 bg-white relative">
         <Image
           src="/images/Group.png"
           alt="icon"
@@ -38,7 +56,7 @@ const Page = () => {
           className="absolute bottom-0 right-0"
         />
 
-        <div className="flex justify-center items-center flex-col p-10">
+        <div className="flex justify-center items-center flex-col">
           <div className="flex justify-center">
             <Image
               src="/images/login_logo.png"
@@ -60,18 +78,13 @@ const Page = () => {
             onFinishFailed={onFinishFailed}
             autoComplete="off"
           >
-            {/* First Name and Last Name side by side */}
+            {/* First Name and Last Name */}
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   label="First Name"
                   name="firstName"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please enter your first name!",
-                    },
-                  ]}
+                  rules={[{ required: true, message: "Enter first name!" }]}
                 >
                   <Input placeholder="First Name" />
                 </Form.Item>
@@ -80,70 +93,48 @@ const Page = () => {
                 <Form.Item
                   label="Last Name"
                   name="lastName"
-                  rules={[
-                    { required: true, message: "Please enter your last name!" },
-                  ]}
+                  rules={[{ required: true, message: "Enter last name!" }]}
                 >
                   <Input placeholder="Last Name" />
                 </Form.Item>
               </Col>
             </Row>
 
-            {/* Other fields */}
+            {/* Email */}
             <Form.Item
               label="Email Address"
               name="email"
-              rules={[
-                { required: true, message: "Please enter your email address!" },
-              ]}
+              rules={[{ required: true, message: "Enter email address!" }]}
             >
               <Input placeholder="Enter your email" />
             </Form.Item>
 
+            {/* Username */}
             <Form.Item
               label="Username"
               name="username"
-              rules={[{ required: true, message: "Please enter a username!" }]}
+              rules={[{ required: true, message: "Enter a username!" }]}
             >
               <Input placeholder="Enter your username" />
             </Form.Item>
 
+            {/* Password */}
             <Form.Item
               label="Password"
               name="password"
               rules={[
-                { required: true, message: "Please enter your password!" },
-                {
-                  min: 8,
-                  message: "Password must be at least 8 characters long.",
-                },
+                { required: true, message: "Enter your password!" },
+                { min: 8, message: "Password must be 8+ characters." },
               ]}
             >
               <Input.Password placeholder="Enter password" />
             </Form.Item>
 
-            {/* <Form.Item
-              label="Confirm Password"
-              name="confirmPassword"
-              dependencies={["password"]}
-              rules={[
-                { required: true, message: "Please confirm your password!" },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || getFieldValue("password") === value) {
-                      return Promise.resolve();
-                    }
-                    return Promise.reject("Passwords do not match!");
-                  },
-                }),
-              ]}
-            >
-              <Input.Password placeholder="Confirm password" />
-            </Form.Item> */}
-
+            {/* Submit Button */}
             <Form.Item>
               <Button
                 type="primary"
+                loading={loading}
                 htmlType="submit"
                 className="!bg-[#141823] !rounded-full !w-full !py-5 mt-4"
               >
@@ -151,6 +142,7 @@ const Page = () => {
               </Button>
             </Form.Item>
 
+            {/* Google Signup Placeholder */}
             <Form.Item>
               <Button
                 type="default"
@@ -167,11 +159,12 @@ const Page = () => {
             </Form.Item>
           </Form>
         </div>
+        <ToastContainer />
       </div>
 
       {/* Right Column */}
       <div
-        className="hidden md:block p-4 h-screen"
+        className="hidden md:block p-4"
         style={{
           backgroundImage: "url('/images/bg-img.png')",
           backgroundPosition: "center",

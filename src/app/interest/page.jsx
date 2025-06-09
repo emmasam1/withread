@@ -1,36 +1,78 @@
 "use client";
 
-import { Form, Input, Button, Row, Col } from "antd";
+import { Button } from "antd";
 import Image from "next/image";
-import React, { useState } from "react";
-
-const interestsList = [
-  "Blockchain Technology",
-  "Database Management",
-  "Gaming Technology",
-  "Network Security",
-  "Tech content",
-  "AR / VR",
-  "IT Job Market Trends",
-  "Network Protocols",
-  "Cryptocurrency",
-  "5G and Beyond",
-];
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useApp } from "../context/context";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Page = () => {
+  const { API_BASE_URL, setLoading, loading } = useApp();
+  const [interestsList, setInterestsList] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
 
-  const toggleInterest = (interest) => {
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchInterests = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/interest/interests`);
+        setInterestsList(res.data.categories || []);
+      } catch (error) {
+        console.error("Failed to fetch interests:", error);
+        toast.error("Failed to load interests.");
+      }
+    };
+
+    fetchInterests();
+  }, [API_BASE_URL]);
+
+  const toggleInterest = (id) => {
     setSelectedInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((item) => item !== interest)
-        : [...prev, interest]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  const handleSubmit = () => {
-    console.log("Selected Interests:", selectedInterests);
-    // redirect or submit logic here
+  const handleSubmit = async () => {
+    setLoading(true);
+
+    try {
+      const rawToken = sessionStorage.getItem("token");
+      const token = rawToken && JSON.parse(rawToken); // ✅ unquote
+
+      if (!token) {
+        toast.error("Authentication token missing. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+
+      console.log("Using config for API call:", config);
+
+      await axios.put(
+        `${API_BASE_URL}/api/user/interests`,
+        { interests: selectedInterests },
+        config
+      );
+
+      toast.success("Interests saved!");
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Submit failed:", error?.response?.data || error.message);
+      toast.error(
+        error?.response?.data?.message || "Failed to save interests."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,54 +94,50 @@ const Page = () => {
           className="absolute bottom-0 right-0"
         />
 
-        <div className="flex justify-center items-center flex-col !mt-20 ">
-          <div className="flex justify-center">
-            <Image
-              src="/images/login_logo.png"
-              alt="logo"
-              width={150}
-              height={150}
-            />
-          </div>
+        <div className="flex justify-center items-center flex-col !mt-20">
+          <Image
+            src="/images/login_logo.png"
+            alt="logo"
+            width={150}
+            height={150}
+          />
           <h1 className="font-semibold text-center text-black text-2xl mt-3 mb-5">
             Welcome to Withread!
           </h1>
 
-          <div>
-            <h1 className="font-bold text-3xl text-black">
-              What kind of interest do you want <br />
-              on your feed?
-            </h1>
-            <p className="text-gray-500 mt-4">
-              Select at least 4 for now. You can add more later
-            </p>
+          <h1 className="font-bold text-3xl text-black">
+            What kind of interest do you want <br />
+            on your feed?
+          </h1>
+          <p className="text-gray-500 mt-4">
+            Select at least 4 for now. You can add more later.
+          </p>
 
-            <div className="flex flex-wrap gap-3 mt-5 max-w-2xl">
-              {interestsList.map((interest) => (
-                <button
-                  key={interest}
-                  onClick={() => toggleInterest(interest)}
-                  className={`px-5 py-2 rounded-full border text-sm font-medium transition-all cursor-pointer
-              ${
-                selectedInterests.includes(interest)
-                  ? "bg-black text-white border-black"
-                  : "bg-white text-black border-gray-300"
-              }`}
-                >
-                  {interest}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-end">
-              <Button
-                type="primary"
-                onClick={handleSubmit}
-                className="mt-10 !bg-[#141823] !rounded-full !px-10 !py-5"
+          <div className="flex flex-wrap gap-3 mt-5 max-w-2xl">
+            {interestsList.map((interest) => (
+              <button
+                key={interest._id}
+                onClick={() => toggleInterest(interest._id)}
+                className={`px-5 py-2 rounded-full border text-sm font-medium transition-all cursor-pointer ${
+                  selectedInterests.includes(interest._id)
+                    ? "bg-black text-white border-black"
+                    : "bg-white text-black border-gray-300"
+                }`}
               >
-                Continue
-              </Button>
-            </div>
+                {interest.name}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              type="primary"
+              onClick={handleSubmit}
+              className="mt-10 !bg-[#141823] !rounded-full !px-10 !py-5"
+              loading={loading}
+            >
+              Continue
+            </Button>
           </div>
         </div>
       </div>
@@ -114,6 +152,8 @@ const Page = () => {
           backgroundRepeat: "no-repeat",
         }}
       ></div>
+
+      <ToastContainer />
     </div>
   );
 };

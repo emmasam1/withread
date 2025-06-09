@@ -4,24 +4,37 @@ import { Input, Button } from "antd";
 import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useApp } from "../context/context";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 
 const Page = () => {
+  const [otp, setOtp] = useState("");
+  const { API_BASE_URL, setLoading, loading } = useApp();
   const router = useRouter();
 
-  const onChange = (text) => {
-    console.log("onChange:", text);
-  };
-  const onInput = (value) => {
-    console.log("onInput:", value);
-  };
+  const handleSubmit = async () => {
+    if (otp.length !== 6) {
+      toast.error("OTP must be 6 digits.");
+      return;
+    }
 
-  const sharedProps = {
-    onChange,
-    onInput,
-  };
+    const url = `${API_BASE_URL}/api/auth/verify-email`;
 
-  const handleSubmit = () => {
-    router.push("/signin");
+    setLoading(true);
+    try {
+      const res = await axios.post(url, { code: otp });
+      toast.success(res.data.message || "Email verified successfully");
+      router.push("/signin");
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Verification failed. Try again.";
+      toast.error(message);
+      console.error("Verify error:", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,7 +56,7 @@ const Page = () => {
           className="absolute bottom-0 right-0"
         />
 
-        <div className="flex justify-center items-center flex-col h-full ">
+        <div className="flex justify-center items-center flex-col h-full">
           <div className="flex justify-center">
             <Image
               src="/images/login_logo.png"
@@ -56,17 +69,26 @@ const Page = () => {
             Welcome to Withread!
           </h1>
 
-          <div>
-            <h1 className="font-bold text-xl text-center text-black mb-3">
-              Check email for OTP
+          <div className="w-full max-w-sm flex flex-col items-center">
+            <h1 className="font-bold text-md text-center text-black mb-3">
+              Check your email for the OTP
             </h1>
-            <Input.OTP length={6} {...sharedProps} />
+
+            <Input.OTP
+              length={6}
+              value={otp}
+              onChange={(value) => setOtp(value)}
+              inputType="numeric"
+              className="!mb-5"
+              autoFocus
+            />
 
             <div className="flex justify-center">
               <Button
                 type="primary"
                 onClick={handleSubmit}
-                className="mt-10 !bg-[#141823] !rounded-full !px-10 !py-5"
+                loading={loading}
+                className="!bg-[#141823] !rounded-full !px-10 mt-5 !py-5 w-full"
               >
                 Verify
               </Button>
@@ -85,6 +107,8 @@ const Page = () => {
           backgroundRepeat: "no-repeat",
         }}
       ></div>
+
+      <ToastContainer />
     </div>
   );
 };

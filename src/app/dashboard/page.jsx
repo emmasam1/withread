@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Button, Input, Divider } from "antd";
 import { motion } from "framer-motion";
-import { useAuth } from "../context/context";
+import { useApp } from "../context/context";
+
 
 // import ForYou from "@/components/home/ForYou";
 import ForYou from "./components/home/ForYou";
@@ -21,7 +22,7 @@ const Following = () => (
 
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
-  const { isLoggedIn, login, logout } = useAuth();
+ const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading  } = useApp();
 
   const tabs = [
     { key: "1", label: "For you", content: <ForYou /> },
