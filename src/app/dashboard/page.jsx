@@ -35,7 +35,7 @@ const Page = () => {
       {/* Left Column */}
       <div className="rounded-lg p-4 grid grid-cols gap-4">
         <div className="w-full mx-auto -mt-4">
-          {isLoggedIn && (
+          {user && (
             <>
               {/* Tab Header */}
               <div className="relative flex bg-gray-100 rounded-full p-1 mb-4">
