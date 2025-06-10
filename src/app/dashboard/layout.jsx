@@ -40,16 +40,15 @@ export default function DashboardLayout({ children }) {
   };
 
   const Logout = () => {
-  // Clear user data from context and sessionStorage
-  setUser(null);
-  setToken(null);
-  sessionStorage.removeItem("user");
-  sessionStorage.removeItem("token");
+    // Clear user data from context and sessionStorage
+    setUser(null);
+    setToken(null);
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
 
-  // Optionally redirect to login or homepage
-  router.push("/dashboard"); // or "/" or wherever appropriate
-};
-
+    // Optionally redirect to login or homepage
+    router.push("/dashboard"); // or "/" or wherever appropriate
+  };
 
   const items = [
     {
@@ -107,7 +106,7 @@ export default function DashboardLayout({ children }) {
     {
       key: "4",
       label: (
-        <a className="flex !text-[#FF9E80] items-center gap-3" onClick={Logout}>
+        <a className="flex items-center gap-3" onClick={Logout}>
           <Image src="/images/logout.png" alt="icon" width={17} height={10} />
           Sign Out
         </a>
@@ -128,8 +127,6 @@ export default function DashboardLayout({ children }) {
       }
     }
   }, []);
-
-  console.log(user?.avatar);
 
   const initials = `${user?.firstName?.[0] || ""}${
     user?.lastName?.[0] || ""
@@ -195,10 +192,28 @@ export default function DashboardLayout({ children }) {
           background: "#0A0E16",
         }}
       >
+        {collapsed ? (
+          <Image
+            src="/images/small_icon.png"
+            alt="icon"
+            width={50}
+            height={50}
+            className="my-3 mx-auto"
+          />
+        ) : (
+          <Image
+            src="/images/large_icon.png"
+            alt="icon"
+            width={150}
+            height={100}
+            className="my-3 mx-auto"
+          />
+        )}
         <Menu
           theme="#0A0E16"
           mode="inline"
           defaultSelectedKeys={["1"]}
+          className="mt-5"
           items={[
             {
               key: "1",
@@ -294,7 +309,7 @@ export default function DashboardLayout({ children }) {
           className="!bg-[#1D222F] !w-[20px] !rounded-tr-none !rounded-br-none hover:!bg-[#F5F5F5] group"
           style={{
             position: "absolute",
-            top: "35px",
+            top: "77px",
             right: "0",
           }}
           onClick={() => setCollapsed(!collapsed)}
@@ -306,39 +321,43 @@ export default function DashboardLayout({ children }) {
             )
           }
         />
-       {user ?  <div className="absolute bottom-5  px-4" trigger={["click"]}>
-          <Dropdown menu={{ items }} placement="Right" trigger={["click"]}>
-            <div className="flex items-center gap-2 cursor-pointer">
-              {user?.avatar ? (
-                <Image
-                  src={user?.avatar} // fallback in case avatar is null
-                  alt="user image"
-                  width={45}
-                  height={45}
-                  className="rounded-full"
-                />
-              ) : (
-                <div className="!bg-[#F6F6F6]  rounded-full p-2 w-12 h-12 flex justify-center items-center">
-                  <h1 className="font-semibold text-gray-400">{initials}</h1>
-                </div>
-              )}
-              <div>
-                <h1
-                  className={`${collapsed ? "hidden" : "block"} font-semibold`}
-                >
-                  {user?.firstName} {user?.lastName}
-                </h1>
+        {user ? (
+          <div className="absolute bottom-5  px-4" trigger={["click"]}>
+            <Dropdown menu={{ items }} placement="Right" trigger={["click"]}>
+              <div className="flex items-center gap-2 cursor-pointer">
+                {user?.avatar ? (
+                  <Image
+                    src={user?.avatar} // fallback in case avatar is null
+                    alt="user image"
+                    width={45}
+                    height={45}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="!bg-[#F6F6F6]  rounded-full p-2 w-12 h-12 flex justify-center items-center">
+                    <h1 className="font-semibold text-gray-400">{initials}</h1>
+                  </div>
+                )}
+                <div>
+                  <h1
+                    className={`${
+                      collapsed ? "hidden" : "block"
+                    } font-semibold`}
+                  >
+                    {user?.firstName} {user?.lastName}
+                  </h1>
 
-                <p></p>
+                  <p></p>
+                </div>
+                <RightOutlined
+                  className={`${
+                    collapsed ? "hidden" : "block relative -right-5"
+                  }`}
+                />
               </div>
-              <RightOutlined
-                className={`${
-                  collapsed ? "hidden" : "block relative -right-5"
-                }`}
-              />
-            </div>
-          </Dropdown>
-        </div> : null}
+            </Dropdown>
+          </div>
+        ) : null}
       </Sider>
 
       {/* Main layout shifted right to account for fixed Sider */}
