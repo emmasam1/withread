@@ -24,10 +24,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-.ant-dropdown .css-dev-only-do-not-override-mc1tut {
+/* .ant-dropdown .css-dev-only-do-not-override-mc1tut {
   position: absolute;
   bottom: -16px;
   right: -220px;
   background-color: #0A0E16;
   width: 200px;
 }
+
+.ant-dropdown {
+  position: absolute;
+  bottom: -16px;
+  right: -220px;
+  background-color: #0A0E16;
+  width: 200px;
+} */
+
+.ant-dropdown .ant-dropdown-menu {
+  background-color: #0A0E16;
+  width: 200px;
+  position: absolute;
+  bottom: -16px;
+  right: -220px;
+}
+
