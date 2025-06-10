@@ -22,7 +22,7 @@ const Page = () => {
       const res = await axios.post(url, values);
       toast.success("Signup successful. Check your email.");
       console.log(res)
-      // router.push("/verify-otp");
+      router.push("/verify-otp");
     } catch (error) {
       const message =
         error?.response?.data?.message || "Signup failed. Try again.";
