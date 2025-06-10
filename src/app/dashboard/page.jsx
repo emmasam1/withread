@@ -23,6 +23,8 @@ const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
   const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
 
+
+
   const tabs = [
     { key: "1", label: "For you", content: <ForYou /> },
     { key: "2", label: "Featured", content: <Featured /> },
@@ -48,10 +50,10 @@ const Page = () => {
   }`.toUpperCase();
 
   return (
-    <div className="grid grid-cols-[2fr_500px] h-screen ">
+    <div className="grid grid-cols-[2fr_400px] h-screen ">
       {/* Left Column */}
       <div className="rounded-lg p-4 grid grid-cols gap-4">
-        <div className="w-full mx-auto -mt-4">
+        <div className="w-full -mt-4">
           {user && (
             <>
               {/* Tab Header */}
@@ -117,7 +119,7 @@ const Page = () => {
       </div>
 
       {/* Right Column */}
-      <div className="overflow-auto fixed right-10 w-[500px] h-screen pb-25">
+      <div className="overflow-auto fixed right-10 w-[400px] h-screen pb-25">
         <TopCreators />
         <TrendingContents />
       </div>
