@@ -37,6 +37,11 @@ const Page = () => {
   };
 
   const handleSubmit = async () => {
+    if(interestsList.length < 1){
+      toast.error("Select an interest")
+      return
+    }
+
     setLoading(true);
 
     try {
