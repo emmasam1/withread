@@ -56,7 +56,7 @@ const ForYou = () => {
         ? Array(3).fill(null).map((_, index) => (
             <div
               key={index}
-              className="bg-white rounded-lg p-4 shadow-md w-full max-w-3xl mx-auto"
+              className="bg-white rounded-lg p-2 shadow-md w-full max-w-3xl mx-auto"
             >
               {/* User Info */}
               <div className="flex justify-between items-center mb-4">
