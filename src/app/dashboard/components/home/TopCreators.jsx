@@ -8,19 +8,19 @@ const TopCreators = () => {
     {
       name: "Jameson Michelle",
       title: "Web3 Developer",
-      avatar: "/images/rectangle6.png",
+      avatar: "/images/Rectangle6.png",
       verified: true,
     },
     {
       name: "Kounde Harry",
       title: "Cybersecurity",
-      avatar: "/images/rectangle6.png",
+      avatar: "/images/Rectangle6.png",
       verified: true,
     },
     {
       name: "Damson Lamal",
       title: "Data Analyst",
-      avatar: "/images/rectangle6.png",
+      avatar: "/images/Rectangle6.png",
       verified: true,
     },
   ];
