@@ -148,6 +148,7 @@ const items = [
 const ForYou = () => {
   const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
   const [allPost, setAllPost] = useState([]);
+  const [allInterestPost, setAllInterestPost] = useState('');
 
   const getAllPost = async () => {
     const url = `${API_BASE_URL}/api/post/all-posts`;
@@ -158,10 +159,24 @@ const ForYou = () => {
       console.error("Error fetching posts:", error);
     }
   };
+
+  const getAllInterestPost = async () => {
+      const url = `${API_BASE_URL}/api/post/user/post-by-interest`;
+    try {
+      const res = await axios.get(url);
+      setAllInterestPost(res.data.interests);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+    }
+  }
+
+  console.log("one user", allInterestPost.length)
+
 console.log(allPost)
   useEffect(() => {
     if (API_BASE_URL) {
       getAllPost();
+      getAllInterestPost()
     }
   }, [API_BASE_URL]);
 
@@ -240,8 +255,10 @@ console.log(allPost)
               <p className="flex items-center gap-1 text-xs"><Image src='/images/comment.png' alt='icon' width={15} height={15}/> Comments</p>
               <p className="flex items-center gap-1 text-xs"><Image src='/images/share.png' alt='icon' width={15} height={15}/> Share</p>
             </div>
-            <div>
-              <p></p>
+            <div className="flex justify-between items-center gap-1.5">
+              <p className="flex items-center gap-1 text-xs">{post.comments.length} Comments</p>
+              <Image src='/images/dot.png' alt='icon' width={3} height={3}/>
+              <p className="flex items-center gap-1 text-xs">{post.comments.length} Impressions</p>
             </div>
           </div>
         </div>
