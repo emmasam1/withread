@@ -8,6 +8,7 @@ import axios from "axios";
 import { useApp } from "../context/context";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Link from "next/link";
 
 const Page = () => {
   const { API_BASE_URL, setLoading, loading, setUser, setToken } = useApp();
@@ -149,6 +150,7 @@ const Page = () => {
               </Form.Item>
             </Form>
           </div>
+        <p className="text-gray-500 text-sm">Don't have an account? <Link href='/signup'>Sign Up</Link></p>
         </div>
       </div>
 

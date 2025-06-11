@@ -8,6 +8,7 @@ import axios from "axios";
 import { useApp } from "../context/context";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Link from "next/link";
 
 const Page = () => {
   const { API_BASE_URL, setLoading, loading } = useApp();
@@ -131,19 +132,19 @@ const Page = () => {
             </Form.Item>
 
             {/* Submit Button */}
-            <Form.Item>
+            <Form.Item className="!-mt-1">
               <Button
                 type="primary"
                 loading={loading}
                 htmlType="submit"
-                className="!bg-[#141823] !rounded-full !w-full !py-5 mt-4"
+                className="!bg-[#141823] !rounded-full !w-full !py-5"
               >
                 Sign up now
               </Button>
             </Form.Item>
 
             {/* Google Signup Placeholder */}
-            <Form.Item>
+            <Form.Item className="!-mt-3">
               <Button
                 type="default"
                 className="!bg-transparent !border !border-black !rounded-full !w-full !py-5 flex items-center justify-center"
@@ -158,6 +159,7 @@ const Page = () => {
               </Button>
             </Form.Item>
           </Form>
+          <p className="text-gray-500 text-sm">Already have an account? <Link href='/signin'>Login</Link></p>
         </div>
         <ToastContainer />
       </div>
