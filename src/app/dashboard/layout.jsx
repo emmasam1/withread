@@ -416,7 +416,9 @@ export default function DashboardLayout({ children }) {
               </Button>
             )}
 
-            <div className="bg-[#F3F3F4] rounded-full p-2">
+            {user ? 
+           <div className="flex items-center gap-2">
+               <div className="bg-[#F3F3F4] rounded-full p-2">
               <Image src="/images/sms.png" width={20} height={20} alt="icon" />
             </div>
             <div className="bg-[#F3F3F4] rounded-full p-2">
@@ -427,12 +429,14 @@ export default function DashboardLayout({ children }) {
                 alt="icon"
               />
             </div>
+           </div>
+             : null}
           </div>
         </Header>
 
         {/* Scrollable Content */}
         <Content
-          className="overflow-y-auto p-6"
+          className="overflow-y-auto p-3 !px-0"
           style={{
             marginTop: 64,
             background: "#F6F8FB",

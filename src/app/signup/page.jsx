@@ -125,7 +125,7 @@ const Page = () => {
               name="password"
               rules={[
                 { required: true, message: "Enter your password!" },
-                { min: 8, message: "Password must be 8+ characters." },
+                { min: 6, message: "Password must be 6+ characters." },
               ]}
             >
               <Input.Password placeholder="Enter password" />

@@ -29,7 +29,7 @@ const Page = () => {
       setToken(token);
 
       sessionStorage.setItem("user", JSON.stringify(user));
-      sessionStorage.setItem("token", JSON.stringify(token));
+      sessionStorage.setItem("token", token);
 
       if (user.interests.length < 1) {
         router.push("/interest");
@@ -115,8 +115,8 @@ const Page = () => {
                 rules={[
                   { required: true, message: "Please enter your password!" },
                   {
-                    min: 8,
-                    message: "Password must be at least 8 characters long.",
+                    min: 6,
+                    message: "Password must be at least 6 characters long.",
                   },
                 ]}
               >

@@ -17,12 +17,11 @@ const items = [
 ];
 
 const ForYou = () => {
-  const { user, API_BASE_URL } = useApp();
+  const { user, API_BASE_URL, token } = useApp();
   const [allPost, setAllPost] = useState([]);
   const [allInterestPost, setAllInterestPost] = useState([]);
 
-  const userToken = JSON.parse(sessionStorage.getItem("token"));
-
+  
   const getAllPost = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/post/all-posts`);
@@ -31,12 +30,12 @@ const ForYou = () => {
       console.error("Error fetching all posts:", error);
     }
   };
-
-  const getAllInterestPost = async () => {
+  
+ const getAllInterestPost = async () => {
     try {
       const res = await axios.get(`${API_BASE_URL}/api/post/user/post-by-interest`, {
         headers: {
-          Authorization: `Bearer ${userToken}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       setAllInterestPost(res.data.posts);
@@ -44,6 +43,8 @@ const ForYou = () => {
       console.error("Error fetching interest posts:", error);
     }
   };
+
+
 
   useEffect(() => {
     if (!API_BASE_URL) return;
