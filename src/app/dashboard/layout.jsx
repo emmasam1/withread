@@ -382,8 +382,8 @@ export default function DashboardLayout({ children }) {
           <div>
             <Input
               placeholder="Search anything..."
-              className="mt-4 !rounded-full !pr-12"
-              suffix={
+              className="mt-4 !rounded-full"
+              prefix={
                 <Image
                   src="/images/search-normal.png"
                   alt="search icon"

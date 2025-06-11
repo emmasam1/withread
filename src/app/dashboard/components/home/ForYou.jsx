@@ -17,48 +17,55 @@ const items = [
 ];
 
 const ForYou = () => {
-  const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
+  const { user, API_BASE_URL } = useApp();
   const [allPost, setAllPost] = useState([]);
   const [allInterestPost, setAllInterestPost] = useState([]);
 
+  const userToken = JSON.parse(sessionStorage.getItem("token"));
+
   const getAllPost = async () => {
-    const url = `${API_BASE_URL}/api/post/all-posts`;
     try {
-      const res = await axios.get(url);
+      const res = await axios.get(`${API_BASE_URL}/api/post/all-posts`);
       setAllPost(res.data.posts);
     } catch (error) {
-      console.error("Error fetching posts:", error);
+      console.error("Error fetching all posts:", error);
     }
   };
 
   const getAllInterestPost = async () => {
-    const url = `${API_BASE_URL}/api/post/user/post-by-interest`;
     try {
-      const res = await axios.get(url);
-      setAllInterestPost(res.data.interests);
+      const res = await axios.get(`${API_BASE_URL}/api/post/user/post-by-interest`, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
+      setAllInterestPost(res.data.posts);
     } catch (error) {
       console.error("Error fetching interest posts:", error);
     }
   };
 
-  console.log('first', allInterestPost)
-
   useEffect(() => {
-    if (API_BASE_URL) {
-      getAllPost();
+    if (!API_BASE_URL) return;
+    if (user) {
       getAllInterestPost();
+    } else {
+      getAllPost();
     }
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, user]);
+
+  const posts = user ? allInterestPost : allPost;
 
   return (
     <div className="space-y-8">
-      {allPost.length === 0
-        ? Array(3).fill(null).map((_, index) => (
+      {posts.length === 0 ? (
+        Array(3)
+          .fill(null)
+          .map((_, index) => (
             <div
               key={index}
               className="bg-white rounded-lg p-2 shadow-md w-full max-w-3xl mx-auto"
             >
-              {/* User Info */}
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
                   <Skeleton.Avatar active size="default" shape="circle" />
@@ -72,19 +79,13 @@ const ForYou = () => {
                   <Skeleton.Input style={{ width: 20 }} active size="small" />
                 </div>
               </div>
-
-              {/* Simulated Image */}
               <div className="my-3">
                 <div className="w-full h-[200px] bg-gray-200 rounded" />
               </div>
-
-              {/* Text Content */}
               <div className="space-y-2">
                 <Skeleton.Input style={{ width: 200 }} active size="default" />
                 <Skeleton paragraph={{ rows: 2 }} active />
               </div>
-
-              {/* Actions */}
               <div className="flex justify-between items-center mt-3">
                 <div className="flex gap-6">
                   <Skeleton.Input style={{ width: 80 }} active size="small" />
@@ -98,100 +99,99 @@ const ForYou = () => {
               </div>
             </div>
           ))
-        : allPost.map((post, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-lg p-4 shadow-md w-full max-w-3xl mx-auto"
-            >
-              {/* User Info */}
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  <Image
-                    src={post.author?.avatar || "/images/default-avatar.png"}
-                    alt="User Avatar"
-                    width={40}
-                    height={40}
-                    className="rounded-full"
-                  />
-                  <div>
-                    <p className="font-medium text-gray-800">
-                      {post.author?.firstName} {post.author?.lastName}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(post.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    size="small"
-                    className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-1 !px-3"
-                  >
-                    Follow
-                  </Button>
-                  <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
-                    <a onClick={(e) => e.preventDefault()}>
-                      <Space>
-                        <Image
-                          src="/images/Frame.png"
-                          alt="More options"
-                          width={18}
-                          height={12}
-                        />
-                      </Space>
-                    </a>
-                  </Dropdown>
+      ) : (
+        posts.map((post, index) => (
+          <div
+            key={index}
+            className="bg-white rounded-lg p-4 shadow-md w-full max-w-3xl mx-auto"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <Image
+                  src={post.author?.avatar || "/images/default-avatar.png"}
+                  alt="User Avatar"
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
+                <div>
+                  <p className="font-medium text-gray-800">
+                    {post.author?.firstName} {post.author?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(post.createdAt).toLocaleString()}
+                  </p>
                 </div>
               </div>
-
-              {/* Post Image */}
-              {post.images?.length > 0 && (
-                <div className="my-3">
-                  <Image
-                    src={post.images[0]}
-                    alt="Post image"
-                    width={800}
-                    height={300}
-                    className="rounded w-full object-cover"
-                  />
-                </div>
-              )}
-
-              {/* Post Content */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                  {post.topic || "Untitled"}
-                </h2>
-                <p className="text-sm text-gray-600">{post.content}</p>
-              </div>
-
-              <div className="flex justify-between items-center mt-3">
-                <div className="flex justify-between items-center gap-6">
-                  <p className="flex items-center gap-1 text-xs bg-gray-300 rounded-full py-1 px-3">
-                    <Image src="/images/like.png" alt="icon" width={15} height={15} /> Likes{" "}
-                    <Image src="/images/dot.png" alt="icon" width={3} height={3} />{" "}
-                    {post.likes.length}
-                  </p>
-                  <p className="flex items-center gap-1 text-xs">
-                    <Image src="/images/comment.png" alt="icon" width={15} height={15} />{" "}
-                    Comments
-                  </p>
-                  <p className="flex items-center gap-1 text-xs">
-                    <Image src="/images/share.png" alt="icon" width={15} height={15} /> Share
-                  </p>
-                </div>
-                <div className="flex justify-between items-center gap-1.5">
-                  <p className="flex items-center gap-1 text-xs">
-                    {post.comments.length} Comments
-                  </p>
-                  <Image src="/images/dot.png" alt="icon" width={3} height={3} />
-                  <p className="flex items-center gap-1 text-xs">
-                    {post.comments.length} Impressions
-                  </p>
-                </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  size="small"
+                  className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-1 !px-3"
+                >
+                  Follow
+                </Button>
+                <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
+                  <a onClick={(e) => e.preventDefault()}>
+                    <Space>
+                      <Image
+                        src="/images/Frame.png"
+                        alt="More options"
+                        width={18}
+                        height={12}
+                      />
+                    </Space>
+                  </a>
+                </Dropdown>
               </div>
             </div>
-          ))}
+
+            {post.images?.length > 0 && (
+              <div className="my-3">
+                <Image
+                  src={post.images[0]}
+                  alt="Post image"
+                  width={800}
+                  height={300}
+                  className="rounded w-full object-cover"
+                />
+              </div>
+            )}
+
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                {post.topic || "Untitled"}
+              </h2>
+              <p className="text-sm text-gray-600">{post.content}</p>
+            </div>
+
+            <div className="flex justify-between items-center mt-3">
+              <div className="flex justify-between items-center gap-6">
+                <p className="flex items-center gap-1 text-xs bg-gray-300 rounded-full py-1 px-3">
+                  <Image src="/images/like.png" alt="icon" width={15} height={15} /> Likes{" "}
+                  <Image src="/images/dot.png" alt="icon" width={3} height={3} />{" "}
+                  {post.likes.length}
+                </p>
+                <p className="flex items-center gap-1 text-xs">
+                  <Image src="/images/comment.png" alt="icon" width={15} height={15} />{" "}
+                  Comments
+                </p>
+                <p className="flex items-center gap-1 text-xs">
+                  <Image src="/images/share.png" alt="icon" width={15} height={15} /> Share
+                </p>
+              </div>
+              <div className="flex justify-between items-center gap-1.5">
+                <p className="flex items-center gap-1 text-xs">
+                  {post.comments.length} Comments
+                </p>
+                <Image src="/images/dot.png" alt="icon" width={3} height={3} />
+                <p className="flex items-center gap-1 text-xs">
+                  {post.comments.length} Impressions
+                </p>
+              </div>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 };
