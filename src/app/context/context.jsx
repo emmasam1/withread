@@ -10,27 +10,45 @@ export const AppProvider = ({ children }) => {
   const API_BASE_URL = "https://withread-api-vah1.onrender.com";
 
   const [user, setUserState] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setTokenState] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user from sessionStorage on mount
+  // Load user and token from sessionStorage on mount
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
-    const token = sessionStorage.getItem("token");
+    const storedToken = sessionStorage.getItem("token");
+
     if (storedUser) {
       setUserState(JSON.parse(storedUser));
     }
+
+    if (storedToken) {
+      setTokenState(storedToken);
+    }
+
     setLoading(false);
   }, []);
 
-  // Save user to sessionStorage whenever it changes
+  // Set user and persist to sessionStorage
   const setUser = (userData) => {
     if (userData) {
       sessionStorage.setItem("user", JSON.stringify(userData));
+      setUserState(userData);
     } else {
       sessionStorage.removeItem("user");
+      setUserState(null);
     }
-    setUserState(userData);
+  };
+
+  // Set token and persist to sessionStorage
+  const setToken = (tokenValue) => {
+    if (tokenValue) {
+      sessionStorage.setItem("token", tokenValue);
+      setTokenState(tokenValue);
+    } else {
+      sessionStorage.removeItem("token");
+      setTokenState(null);
+    }
   };
 
   return (
@@ -39,10 +57,10 @@ export const AppProvider = ({ children }) => {
         API_BASE_URL,
         user,
         setUser,
+        token,
+        setToken,
         loading,
         setLoading,
-        setToken,
-        token
       }}
     >
       {children}
@@ -50,5 +68,5 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-// Hook
+// Custom hook to use the context
 export const useApp = () => useContext(AppContext);

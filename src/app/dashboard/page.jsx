@@ -33,7 +33,7 @@ const Page = () => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedUser = sessionStorage.getItem("user");
+      const storedUser = user;
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
@@ -119,7 +119,7 @@ const Page = () => {
       </div>
 
       {/* Right Column */}
-      <div className="overflow-auto fixed right-10 w-[450px] h-screen pb-25">
+      <div className="overflow-auto fixed right-10 w-[450px] h-screen pb-23.5">
         <TopCreators />
         <TrendingContents />
       </div>
