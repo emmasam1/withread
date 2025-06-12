@@ -53,29 +53,55 @@ const Page = () => {
   };
 
   const addPost = async () => {
-    const url = `${API_BASE_URL}/api/post/post-feed`;
+  if (!title || !content) {
+    message.warning("Title and content are required.");
+    return;
+  }
 
-    const payload = {
-      type: activeTab === "1" ? "open" : "anonymous",
-      title,
-      content,
-      images: files,
-      emojis,
-      categories,
-      tags,
-      collaborators,
-      link,
-    };
+  setLoading(true);
+  const formData = new FormData();
 
-    const res = await axios.post(payload, {
+  formData.append("type", activeTab === "1" ? "open" : "anonymous");
+  formData.append("title", title);
+  formData.append("content", content);
+  formData.append("link", link);
+  formData.append("emojis", emojis);
+  formData.append("categories", categories);
+  formData.append("tags", tags);
+  formData.append("collaborators", collaborators);
+
+  files.forEach((file, index) => {
+    formData.append("images", file); // assuming backend accepts `images` as array
+  });
+
+  try {
+    const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
       },
     });
 
-    console.log("POST PAYLOAD:", payload);
-    message.success("Post data logged to console!");
-  };
+    console.log(res)
+    message.success("Post submitted successfully!");
+
+    // Reset form
+    setTitle("");
+    setContent("");
+    setLink("");
+    setEmojis("");
+    setCategories("");
+    setTags("");
+    setCollaborators("");
+    setFiles([]);
+  } catch (error) {
+    console.error("Post submission failed:", error);
+    message.error("Something went wrong while submitting the post.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="p-4">
@@ -217,6 +243,7 @@ const Page = () => {
           <Button
             className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8"
             onClick={addPost}
+            loading={loading}
           >
             Post Now
           </Button>
