@@ -23,8 +23,6 @@ const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
   const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
 
-
-
   const tabs = [
     { key: "1", label: "For you", content: <ForYou /> },
     { key: "2", label: "Featured", content: <Featured /> },
@@ -33,11 +31,9 @@ const Page = () => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedUser = user;
-      if (storedUser) {
+      if (user) {
         try {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
+          setUser(user);
         } catch (error) {
           console.error("Error parsing stored user:", error);
         }

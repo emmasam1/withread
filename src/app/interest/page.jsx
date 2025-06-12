@@ -15,6 +15,7 @@ const Page = () => {
   const [selectedInterests, setSelectedInterests] = useState([]);
 
   const router = useRouter();
+  console.log(token)
 
   useEffect(() => {
     const fetchInterests = async () => {
