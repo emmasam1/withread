@@ -5,6 +5,7 @@ import { Button, Dropdown, Skeleton, Space } from "antd";
 import Image from "next/image";
 import axios from "axios";
 import { useApp } from "../../../context/context";
+import { toast } from "react-toastify";
 
 const items = [
   { label: "Not interested in this post", key: "0" },
@@ -20,16 +21,19 @@ const ForYou = () => {
   const { user, API_BASE_URL, token } = useApp();
   const [allPost, setAllPost] = useState([]);
   const [allInterestPost, setAllInterestPost] = useState([]);
-  const [loading, setLoading] = useState(true); // <-- Local loading state
+  const [loading, setLoading] = useState(true); 
+  const [likedAnimation, setLikedAnimation] = useState(null);
+
 
   const posts = user ? allInterestPost : allPost;
 
   useEffect(() => {
     if (!API_BASE_URL) return;
+    if (user && !token) return;
 
     const fetchData = async () => {
       try {
-        setLoading(true); // Start loading
+        setLoading(true); 
         if (user && token) {
           const res = await axios.get(
             `${API_BASE_URL}/api/post/user/post-by-interest`,
@@ -47,12 +51,57 @@ const ForYou = () => {
       } catch (error) {
         console.error("Error fetching posts:", error);
       } finally {
-        setLoading(false); // Done loading
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [API_BASE_URL, user, token]);
+
+const handleLikeDislike = async (postId) => {
+  if (!token) {
+    toast.error("You need to log in to like posts.");
+    return;
+  }
+  const currentPost = allPost.find(post => post._id === postId);
+  const isLiked = currentPost?.likes.includes(user._id); 
+
+  if (!isLiked) {
+    setLikedAnimation(postId);
+    setTimeout(() => setLikedAnimation(null), 300);
+  }
+
+  try {
+    const action = isLiked ? "dislike" : "like";
+
+    const response = await axios.put(
+      `${API_BASE_URL}/api/post/${postId}/like-dislike`,
+      { action },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const updatedPost = response.data.post;
+    toast.success(response.data.message);
+
+    const updateState = (prev) =>
+      prev.map((post) => (post._id === postId ? updatedPost : post));
+
+    setAllPost(updateState);
+    setAllInterestPost(updateState);
+  } catch (err) {
+    console.error("Error toggling like/dislike:", err);
+    toast.error("Something went wrong. Please try again.");
+  }
+};
+
+      const AvatarPlaceholder = ({ text }) => (
+               <h1 className="font-semibold text-gray-400">{text}</h1>
+            );
+      const isAnonymous = "Anonymous";
 
   return (
     <div className="space-y-8">
@@ -98,7 +147,7 @@ const ForYou = () => {
             ))
         : posts.map((post, index) => {
             const initials = `${post?.author?.firstName?.[0] || ""}${post?.author?.lastName?.[0] || ""}`.toUpperCase();
-
+            const isLiked = post.likes.includes(user?._id);
             return (
               <div
                 key={index}
@@ -106,7 +155,9 @@ const ForYou = () => {
               >
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
-                    {post?.author?.avatar ? (
+                  {post?.isAnonymous ? (
+                     <AvatarPlaceholder text={isAnonymous} />
+                    ) : post?.author?.avatar ? (
                       <Image
                         src={post.author.avatar}
                         alt="user image"
@@ -116,25 +167,27 @@ const ForYou = () => {
                       />
                     ) : (
                       <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
-                        <h1 className="font-semibold text-gray-400">{initials}</h1>
+                        <AvatarPlaceholder text={initials} />
                       </div>
                     )}
                     <div>
                       <p className="font-medium text-gray-800">
-                        {post.author?.firstName} {post.author?.lastName}
+                        {post.isAnonymous ? '' : `${post.author?.firstName || ''} ${post.author?.lastName || ''}`}
                       </p>
                       <p className="text-xs text-gray-500">
                         {new Date(post.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      size="small"
-                      className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-1 !px-3"
-                    >
-                      Follow
-                    </Button>
+                 <div className="flex items-center gap-3">
+                    {!post.isAnonymous && (
+                      <Button
+                        type="text"
+                        className="!p-0 !text-gray-500 hover:!text-gray-700"
+                      >
+                        {post.collaborators?.length > 0 ? 'Follow Both' : 'Follow'}
+                      </Button>
+                    )}
                     <Dropdown
                       menu={{ items }}
                       trigger={["click"]}
@@ -175,22 +228,27 @@ const ForYou = () => {
 
                 <div className="flex justify-between items-center mt-3">
                   <div className="flex justify-between items-center gap-6">
-                    <p className="flex items-center gap-1 text-xs bg-gray-300 rounded-full py-1 px-3">
-                      <Image
-                        src="/images/like.png"
-                        alt="like icon"
-                        width={15}
-                        height={15}
-                      />
-                      Likes
-                      <Image
-                        src="/images/dot.png"
-                        alt="dot"
-                        width={3}
-                        height={3}
-                      />
-                      {post.likes.length}
-                    </p>
+                  <button
+                    onClick={() => handleLikeDislike(post._id, isLiked)}
+                    className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
+                      isLiked ? "bg-blue-100 text-blue-600" : "bg-gray-300 text-gray-800"
+                    } ${likedAnimation === post._id ? "scale-110" : "scale-100"}`}
+                  >
+                    <Image
+                      src="/images/like.png"
+                      alt="like icon"
+                      width={15}
+                      height={15}
+                    />
+                    {isLiked ? "Liked" : "Like"}
+                    <Image
+                      src="/images/dot.png"
+                      alt="dot"
+                      width={3}
+                      height={3}
+                    />
+                    {post.likes.length}
+                  </button>
                     <p className="flex items-center gap-1 text-xs">
                       <Image
                         src="/images/comment.png"
