@@ -10,7 +10,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Page = () => {
-  const { API_BASE_URL, setLoading, loading } = useApp();
+  const { API_BASE_URL, setLoading, loading, token } = useApp();
   const [interestsList, setInterestsList] = useState([]);
   const [selectedInterests, setSelectedInterests] = useState([]);
 
@@ -45,8 +45,6 @@ const Page = () => {
     setLoading(true);
 
     try {
-      const rawToken = sessionStorage.getItem("token");
-      const token = rawToken && JSON.parse(rawToken); // ✅ unquote
 
       if (!token) {
         toast.error("Authentication token missing. Please log in again.");

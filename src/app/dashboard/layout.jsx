@@ -405,7 +405,7 @@ export default function DashboardLayout({ children }) {
                   height={20}
                   alt="icon"
                 />
-                New Post
+                <Link href="/dashboard/newpost">New Post</Link>
               </Button>
             ) : (
               <Button
@@ -416,21 +416,26 @@ export default function DashboardLayout({ children }) {
               </Button>
             )}
 
-            {user ? 
-           <div className="flex items-center gap-2">
-               <div className="bg-[#F3F3F4] rounded-full p-2">
-              <Image src="/images/sms.png" width={20} height={20} alt="icon" />
-            </div>
-            <div className="bg-[#F3F3F4] rounded-full p-2">
-              <Image
-                src="/images/notification-bing.png"
-                width={20}
-                height={20}
-                alt="icon"
-              />
-            </div>
-           </div>
-             : null}
+            {user ? (
+              <div className="flex items-center gap-2">
+                <div className="bg-[#F3F3F4] rounded-full p-2">
+                  <Image
+                    src="/images/sms.png"
+                    width={20}
+                    height={20}
+                    alt="icon"
+                  />
+                </div>
+                <div className="bg-[#F3F3F4] rounded-full p-2">
+                  <Image
+                    src="/images/notification-bing.png"
+                    width={20}
+                    height={20}
+                    alt="icon"
+                  />
+                </div>
+              </div>
+            ) : null}
           </div>
         </Header>
 

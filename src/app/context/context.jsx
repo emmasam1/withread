@@ -15,18 +15,24 @@ export const AppProvider = ({ children }) => {
 
   // Load user and token from sessionStorage on mount
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("user");
-    const storedToken = sessionStorage.getItem("token");
+    try {
+      const storedUser = sessionStorage.getItem("user");
+      const storedToken = sessionStorage.getItem("token");
 
-    if (storedUser) {
-      setUserState(JSON.parse(storedUser));
+      if (storedUser) {
+        setUserState(JSON.parse(storedUser));
+      }
+
+      if (storedToken) {
+        setTokenState(storedToken);
+      }
+    } catch (error) {
+      console.error("Error parsing stored user:", error);
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("token");
+    } finally {
+      setLoading(false);
     }
-
-    if (storedToken) {
-      setTokenState(storedToken);
-    }
-
-    setLoading(false);
   }, []);
 
   // Set user and persist to sessionStorage
