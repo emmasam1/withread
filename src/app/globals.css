@@ -25,10 +25,30 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 .ant-dropdown .ant-dropdown-menu {
-  background-color: #0A0E16;
+  background-color: #0a0e16;
   width: 200px;
   position: absolute;
   bottom: -16px;
   right: -220px;
 }
+/* Style the editor toolbar */
+.p-editor-toolbar {
+  background-color: white !important;
+  display: flex !important;
+  justify-content: flex-end !important; /* Move icons to the right */
+}
 
+.ql-toolbar.ql-snow {
+  display: flex;
+  justify-content: end;
+  border: none !important;
+}
+
+/* Style the editable area */
+.p-editor-container .p-editor-content {
+  background-color: #f6f6f6 !important;
+  border-radius: 0.37rem !important;
+}
+.ql-container.ql-snow {
+  border: "none" !important;
+}
