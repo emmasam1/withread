@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button, Input, Divider } from "antd";
 import { motion } from "framer-motion";
 import { useApp } from "../context/context";
+import Link from "next/link";
 
 // import ForYou from "@/components/home/ForYou";
 import ForYou from "./components/home/ForYou";
@@ -100,9 +101,36 @@ const Page = () => {
                 </div>
                 <Divider className="!bg-[#f6f6f6b3]" />
                 <div className="flex items-center justify-between">
-                  <div></div>
+                  <div className="flex gap-10 items-center">
+                    <Link
+                      href="/dashboard/newpost"
+                      className="flex tems-center !text-black justify-center gap-2 text-sm"
+                    >
+                      <Image
+                        src="/images/photo.png"
+                        alt="icon"
+                        width={30}
+                        height={30}
+                        className="-mt-1"
+                      />
+                      Photo/Video
+                    </Link>
+                    <Link
+                      href="/dashboard/newpost"
+                      className="flex tems-center !text-black justify-center gap-2 text-sm"
+                    >
+                      <Image
+                        src="/images/content.png"
+                        alt="icon"
+                        width={30}
+                        height={30}
+                        className="-mt-1"
+                      />
+                      Content
+                    </Link>
+                  </div>
                   <Button className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8">
-                    Post
+                    <Link href="/dashboard/newpost">Post</Link>
                   </Button>
                 </div>
               </div>
