@@ -86,7 +86,7 @@ const Page = () => {
   setLoading(true);
 
   const formData = new FormData();
-  formData.append("type", activeTab === "1" ? "true" : "false");
+  formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
   formData.append("title", stripHtml(title));
   formData.append("content", stripHtml(content));
   formData.append("link", link);
