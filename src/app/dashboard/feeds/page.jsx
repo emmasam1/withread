@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button, Dropdown, Skeleton, Space } from "antd";
 import Image from "next/image";
 import axios from "axios";
-import { useApp } from "../../../context/context";
+import { useApp } from "../../context/context";
 import { toast } from "react-toastify";
+import Link from "next/link";
 
 const items = [
   { label: "Not interested in this post", key: "0" },
@@ -31,9 +32,10 @@ const ForYou = () => {
 
     try {
       setLoading(true);
-      const endpoint = user && token
-        ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
-        : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
+      const endpoint =
+        user && token
+          ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
+          : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
 
       const res = await axios.get(endpoint, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -43,7 +45,7 @@ const ForYou = () => {
       if (pageNumber === 1) {
         setPosts(fetchedPosts);
       } else {
-        setPosts(prev => [...prev, ...fetchedPosts]);
+        setPosts((prev) => [...prev, ...fetchedPosts]);
       }
 
       setHasMore(pageNumber < res.data.totalPages);
@@ -82,7 +84,9 @@ const ForYou = () => {
   const handleLikeDislike = async (postId) => {
     if (!token) return toast.error("You need to log in to like posts.");
 
-    const isLiked = posts.find(p => p._id === postId)?.likes.includes(user._id);
+    const isLiked = posts
+      .find((p) => p._id === postId)
+      ?.likes.includes(user._id);
 
     if (!isLiked) {
       setLikedAnimation(postId);
@@ -98,7 +102,7 @@ const ForYou = () => {
       );
 
       const updatedPost = res.data.post;
-      setPosts(prev => prev.map(p => (p._id === postId ? updatedPost : p)));
+      setPosts((prev) => prev.map((p) => (p._id === postId ? updatedPost : p)));
       toast.success(res.data.message);
     } catch (err) {
       console.error("Like error:", err);
@@ -114,7 +118,9 @@ const ForYou = () => {
     <div className="space-y-8 w-full">
       {posts.map((post, index) => {
         const isLastPost = posts.length === index + 1;
-        const initials = `${post?.author?.firstName?.[0] || ""}${post?.author?.lastName?.[0] || ""}`.toUpperCase();
+        const initials = `${post?.author?.firstName?.[0] || ""}${
+          post?.author?.lastName?.[0] || ""
+        }`.toUpperCase();
         const isLiked = post.likes.includes(user?._id);
 
         return (
@@ -123,6 +129,7 @@ const ForYou = () => {
             ref={isLastPost ? lastPostRef : null}
             className="bg-white rounded-lg p-4 shadow-md w-full mx-auto"
           >
+            {/* Header */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 {post.isAnonymous ? (
@@ -142,27 +149,44 @@ const ForYou = () => {
                 )}
                 <div>
                   <p className="font-medium text-gray-800">
-                    {post.isAnonymous ? "" : `${post.author?.firstName} ${post.author?.lastName}`}
+                    {post.isAnonymous
+                      ? ""
+                      : `${post.author?.firstName} ${post.author?.lastName}`}
                   </p>
-                  <p className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">
+                    {new Date(post.createdAt).toLocaleString()}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 {!post.isAnonymous && (
-                  <Button type="text" className="!p-0 !text-gray-500 hover:!text-gray-700">
+                  <Button
+                    type="text"
+                    className="!p-0 !text-gray-500 hover:!text-gray-700"
+                  >
                     {post.collaborators?.length > 0 ? "Follow Both" : "Follow"}
                   </Button>
                 )}
-                <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
+                <Dropdown
+                  menu={{ items }}
+                  trigger={["click"]}
+                  placement="bottomRight"
+                >
                   <a onClick={(e) => e.preventDefault()}>
                     <Space>
-                      <Image src="/images/Frame.png" alt="More options" width={18} height={12} />
+                      <Image
+                        src="/images/Frame.png"
+                        alt="More options"
+                        width={18}
+                        height={12}
+                      />
                     </Space>
                   </a>
                 </Dropdown>
               </div>
             </div>
 
+            {/* Image */}
             {post.images?.length > 0 && (
               <div className="my-3">
                 <Image
@@ -175,32 +199,55 @@ const ForYou = () => {
               </div>
             )}
 
+            {/* Content */}
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-2">
                 {post.title || "Untitled"}
               </h2>
-              <p className="text-sm text-gray-600">{post.content}</p>
+
+              <p>
+                {post.content.slice(0, 100)}...
+                <Link href={`/dashboard/feeds/${post._id}`}>ReadMore</Link>
+              </p>
             </div>
 
+            {/* Footer */}
             <div className="flex justify-between items-center mt-3">
               <div className="flex gap-6 items-center">
                 <button
                   onClick={() => handleLikeDislike(post._id)}
                   className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
-                    isLiked ? "bg-blue-100 text-blue-600" : "bg-gray-300 text-gray-800"
+                    isLiked
+                      ? "bg-blue-100 text-blue-600"
+                      : "bg-gray-300 text-gray-800"
                   } ${likedAnimation === post._id ? "scale-110" : "scale-100"}`}
                 >
-                  <Image src="/images/like.png" alt="like icon" width={15} height={15} />
+                  <Image
+                    src="/images/like.png"
+                    alt="like icon"
+                    width={15}
+                    height={15}
+                  />
                   {isLiked ? "Liked" : "Like"}
                   <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                   {post.likes.length}
                 </button>
                 <p className="flex items-center gap-1 text-xs">
-                  <Image src="/images/comment.png" alt="comment icon" width={15} height={15} />
+                  <Image
+                    src="/images/comment.png"
+                    alt="comment icon"
+                    width={15}
+                    height={15}
+                  />
                   Comments
                 </p>
                 <p className="flex items-center gap-1 text-xs">
-                  <Image src="/images/share.png" alt="share icon" width={15} height={15} />
+                  <Image
+                    src="/images/share.png"
+                    alt="share icon"
+                    width={15}
+                    height={15}
+                  />
                   Share
                 </p>
               </div>
@@ -214,6 +261,7 @@ const ForYou = () => {
         );
       })}
 
+      {/* Loading Skeleton */}
       {loading && (
         <div className="space-y-4 max-w-3xl mx-auto">
           {Array(2)
@@ -230,4 +278,3 @@ const ForYou = () => {
 };
 
 export default ForYou;
-

@@ -8,9 +8,10 @@ import { useApp } from "../context/context";
 import Link from "next/link";
 
 // import ForYou from "@/components/home/ForYou";
-import ForYou from "./components/home/ForYou";
+
 import TrendingContents from "./components/TrendingContents";
 import TopCreators from "./components/home/TopCreators";
+import ForYou from "./feeds/page";
 
 // const ForYou = () => <div className="p-4 bg-white shadow rounded">This is For You</div>;
 const Featured = () => (
@@ -94,10 +95,13 @@ const Page = () => {
                       </h1>
                     </div>
                   )}
-                  <Input
-                    placeholder="Got something on your mind? Spill it out"
-                    className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none"
-                  />
+                  <Link href="/dashboard/newpost" className="w-full">
+                    <Input
+                      placeholder="Got something on your mind? Spill it out"
+                      className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none"
+                      readOnly
+                    />
+                  </Link>
                 </div>
                 <Divider className="!bg-[#f6f6f6b3]" />
                 <div className="flex items-center justify-between">
