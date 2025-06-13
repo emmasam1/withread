@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "../../context/context";
 import dynamic from "next/dynamic";
-import { message, Upload, Input, Button } from "antd";
+import { Select, Upload, Input, Button } from "antd";
 import { motion } from "framer-motion";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const { Dragger } = Upload;
 const Editor = dynamic(
@@ -17,6 +18,13 @@ const Editor = dynamic(
   }
 );
 
+// Utility to strip HTML tags
+const stripHtml = (html) => {
+  const tmp = document.createElement("DIV");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
+};
+
 const Page = () => {
   const { API_BASE_URL, loading, user, token, setLoading } = useApp();
   const [activeTab, setActiveTab] = useState("1");
@@ -25,14 +33,13 @@ const Page = () => {
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
   const [emojis, setEmojis] = useState("");
-  const [categories, setCategories] = useState("");
+  const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState("");
   const [collaborators, setCollaborators] = useState("");
   const [files, setFiles] = useState([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
-  const initials = `${user?.firstName?.[0] || ""}${
-    user?.lastName?.[0] || ""
-  }`.toUpperCase();
+  const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase();
 
   const tabs = [
     { key: "1", label: "Open Post" },
@@ -52,56 +59,141 @@ const Page = () => {
     fileList: files,
   };
 
+  const getCategories = async () => {
+    const url = `${API_BASE_URL}/api/interest/interests`;
+    try {
+      const res = await axios.get(url);
+      setCategories(res.data.categories);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getCategories();
+  }, []);
+
+  const handleChange = (value) => {
+    setSelectedCategoryId(value);
+  };
+
   const addPost = async () => {
   if (!title || !content) {
-    message.warning("Title and content are required.");
+    toast.warning("Title and content are required.");
     return;
   }
 
   setLoading(true);
-  const formData = new FormData();
 
-  formData.append("type", activeTab === "1" ? "open" : "anonymous");
-  formData.append("title", title);
-  formData.append("content", content);
+  const formData = new FormData();
+  // formData.append("type", activeTab === "1" ? "true" : "false");
+  formData.append("title", stripHtml(title));
+  formData.append("content", stripHtml(content));
   formData.append("link", link);
   formData.append("emojis", emojis);
-  formData.append("categories", categories);
+  formData.append("categories", JSON.stringify([selectedCategoryId]));
   formData.append("tags", tags);
   formData.append("collaborators", collaborators);
 
-  files.forEach((file, index) => {
-    formData.append("images", file); // assuming backend accepts `images` as array
+  files.forEach((file) => {
+    formData.append("images", file);
   });
 
-  try {
-    const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
+  // Debug log
+  for (let pair of formData.entries()) {
+    console.log(`${pair[0]}:`, pair[1]);
+  }
 
-    console.log(res)
-    message.success("Post submitted successfully!");
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/post/post-feed`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("Success response:", res.data);
+    toast.success("Post submitted successfully!");
 
     // Reset form
     setTitle("");
     setContent("");
     setLink("");
     setEmojis("");
-    setCategories("");
+    setSelectedCategoryId("");
     setTags("");
     setCollaborators("");
     setFiles([]);
   } catch (error) {
-    console.error("Post submission failed:", error);
-    message.error("Something went wrong while submitting the post.");
+    console.error("Post submission failed:", error.response?.data || error.message);
+    toast.error("Something went wrong while submitting the post.");
   } finally {
     setLoading(false);
   }
 };
 
+
+  // const addPost = async () => {
+  //   if (!title || !content) {
+  //     toast.warning("Title and content are required.");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   const formData = new FormData();
+
+  //   formData.append("type", activeTab === "1" ? "true" : "false");
+  //   formData.append("title", stripHtml(title));
+  //   formData.append("content", stripHtml(content));
+  //   formData.append("link", link);
+  //   formData.append("emojis", emojis);
+  //   formData.append("categories", JSON.stringify([selectedCategoryId]));
+  //   formData.append("tags", tags);
+  //   formData.append("collaborators", collaborators);
+
+  //   files.forEach((file) => {
+  //     formData.append("images", file);
+  //   });
+
+  //   try {
+  //     const res = await axios.post(
+  //       `${API_BASE_URL}/api/post/post-feed`,
+  //       formData,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "multipart/form-data",
+  //         },
+  //       }
+  //     );
+  //     console.log(res)
+  //     toast.success("Post submitted successfully!");
+
+
+  //     // Debug log
+  //     // for (let pair of formData.entries()) {
+  //     //   console.log(`${pair[0]}:`, pair[1]);
+  //     // }
+
+  //     // Reset form
+  //     setTitle("");
+  //     setContent("");
+  //     setLink("");
+  //     setEmojis("");
+  //     setSelectedCategoryId("");
+  //     setTags("");
+  //     setCollaborators("");
+  //     setFiles([]);
+  //   } catch (error) {
+  //     console.error("Post submission failed:", error);
+  //     toast.error("Something went wrong while submitting the post.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="p-4">
@@ -111,7 +203,6 @@ const Page = () => {
       </Link>
 
       <div className="bg-white p-4 rounded-lg shadow">
-        {/* Header: Avatar, Tabs, Options */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             {user?.avatar ? (
@@ -154,6 +245,19 @@ const Page = () => {
                 {tab.label}
               </button>
             ))}
+          </div>
+
+          <div>
+            <Select
+              placeholder="Select Category"
+              style={{ width: 200 }}
+              value={selectedCategoryId || undefined}
+              onChange={handleChange}
+              options={categories?.map((cat) => ({
+                label: cat.name,
+                value: cat._id,
+              }))}
+            />
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -226,7 +330,6 @@ const Page = () => {
             </p>
           </Dragger>
 
-          {/* Optional inputs */}
           <Input
             placeholder="Links (optional)"
             className="!mt-4 !bg-[#F6F6F6] !py-3"

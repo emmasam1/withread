@@ -21,9 +21,8 @@ const ForYou = () => {
   const { user, API_BASE_URL, token } = useApp();
   const [allPost, setAllPost] = useState([]);
   const [allInterestPost, setAllInterestPost] = useState([]);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const [likedAnimation, setLikedAnimation] = useState(null);
-
 
   const posts = user ? allInterestPost : allPost;
 
@@ -33,7 +32,7 @@ const ForYou = () => {
 
     const fetchData = async () => {
       try {
-        setLoading(true); 
+        setLoading(true);
         if (user && token) {
           const res = await axios.get(
             `${API_BASE_URL}/api/post/user/post-by-interest`,
@@ -58,50 +57,50 @@ const ForYou = () => {
     fetchData();
   }, [API_BASE_URL, user, token]);
 
-const handleLikeDislike = async (postId) => {
-  if (!token) {
-    toast.error("You need to log in to like posts.");
-    return;
-  }
-  const currentPost = allPost.find(post => post._id === postId);
-  const isLiked = currentPost?.likes.includes(user._id); 
+  const handleLikeDislike = async (postId) => {
+    if (!token) {
+      toast.error("You need to log in to like posts.");
+      return;
+    }
+    const currentPost = allPost.find((post) => post._id === postId);
+    const isLiked = currentPost?.likes.includes(user._id);
 
-  if (!isLiked) {
-    setLikedAnimation(postId);
-    setTimeout(() => setLikedAnimation(null), 300);
-  }
+    if (!isLiked) {
+      setLikedAnimation(postId);
+      setTimeout(() => setLikedAnimation(null), 300);
+    }
 
-  try {
-    const action = isLiked ? "dislike" : "like";
+    try {
+      const action = isLiked ? "dislike" : "like";
 
-    const response = await axios.put(
-      `${API_BASE_URL}/api/post/${postId}/like-dislike`,
-      { action },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+      const response = await axios.put(
+        `${API_BASE_URL}/api/post/${postId}/like-dislike`,
+        { action },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    const updatedPost = response.data.post;
-    toast.success(response.data.message);
+      const updatedPost = response.data.post;
+      toast.success(response.data.message);
 
-    const updateState = (prev) =>
-      prev.map((post) => (post._id === postId ? updatedPost : post));
+      const updateState = (prev) =>
+        prev.map((post) => (post._id === postId ? updatedPost : post));
 
-    setAllPost(updateState);
-    setAllInterestPost(updateState);
-  } catch (err) {
-    console.error("Error toggling like/dislike:", err);
-    toast.error("Something went wrong. Please try again.");
-  }
-};
+      setAllPost(updateState);
+      setAllInterestPost(updateState);
+    } catch (err) {
+      console.error("Error toggling like/dislike:", err);
+      toast.error("Something went wrong. Please try again.");
+    }
+  };
 
-      const AvatarPlaceholder = ({ text }) => (
-               <h1 className="font-semibold text-gray-400">{text}</h1>
-            );
-      const isAnonymous = "Anonymous";
+  const AvatarPlaceholder = ({ text }) => (
+    <h1 className="font-semibold text-gray-400">{text}</h1>
+  );
+  const isAnonymous = "Anonymous";
 
   return (
     <div className="space-y-8">
@@ -117,8 +116,16 @@ const handleLikeDislike = async (postId) => {
                   <div className="flex items-center gap-3">
                     <Skeleton.Avatar active size="default" shape="circle" />
                     <div className="space-y-1">
-                      <Skeleton.Input style={{ width: 120 }} active size="small" />
-                      <Skeleton.Input style={{ width: 100 }} active size="small" />
+                      <Skeleton.Input
+                        style={{ width: 120 }}
+                        active
+                        size="small"
+                      />
+                      <Skeleton.Input
+                        style={{ width: 100 }}
+                        active
+                        size="small"
+                      />
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -130,7 +137,11 @@ const handleLikeDislike = async (postId) => {
                   <div className="w-full h-[200px] bg-gray-200 rounded" />
                 </div>
                 <div className="space-y-2">
-                  <Skeleton.Input style={{ width: 200 }} active size="default" />
+                  <Skeleton.Input
+                    style={{ width: 200 }}
+                    active
+                    size="default"
+                  />
                   <Skeleton paragraph={{ rows: 2 }} active />
                 </div>
                 <div className="flex justify-between items-center mt-3">
@@ -146,7 +157,9 @@ const handleLikeDislike = async (postId) => {
               </div>
             ))
         : posts.map((post, index) => {
-            const initials = `${post?.author?.firstName?.[0] || ""}${post?.author?.lastName?.[0] || ""}`.toUpperCase();
+            const initials = `${post?.author?.firstName?.[0] || ""}${
+              post?.author?.lastName?.[0] || ""
+            }`.toUpperCase();
             const isLiked = post.likes.includes(user?._id);
             return (
               <div
@@ -155,8 +168,8 @@ const handleLikeDislike = async (postId) => {
               >
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
-                  {post?.isAnonymous ? (
-                     <AvatarPlaceholder text={isAnonymous} />
+                    {post?.isAnonymous ? (
+                      <AvatarPlaceholder text={isAnonymous} />
                     ) : post?.author?.avatar ? (
                       <Image
                         src={post.author.avatar}
@@ -172,20 +185,26 @@ const handleLikeDislike = async (postId) => {
                     )}
                     <div>
                       <p className="font-medium text-gray-800">
-                        {post.isAnonymous ? '' : `${post.author?.firstName || ''} ${post.author?.lastName || ''}`}
+                        {post.isAnonymous
+                          ? ""
+                          : `${post.author?.firstName || ""} ${
+                              post.author?.lastName || ""
+                            }`}
                       </p>
                       <p className="text-xs text-gray-500">
                         {new Date(post.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
-                 <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     {!post.isAnonymous && (
                       <Button
                         type="text"
                         className="!p-0 !text-gray-500 hover:!text-gray-700"
                       >
-                        {post.collaborators?.length > 0 ? 'Follow Both' : 'Follow'}
+                        {post.collaborators?.length > 0
+                          ? "Follow Both"
+                          : "Follow"}
                       </Button>
                     )}
                     <Dropdown
@@ -228,27 +247,31 @@ const handleLikeDislike = async (postId) => {
 
                 <div className="flex justify-between items-center mt-3">
                   <div className="flex justify-between items-center gap-6">
-                  <button
-                    onClick={() => handleLikeDislike(post._id, isLiked)}
-                    className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
-                      isLiked ? "bg-blue-100 text-blue-600" : "bg-gray-300 text-gray-800"
-                    } ${likedAnimation === post._id ? "scale-110" : "scale-100"}`}
-                  >
-                    <Image
-                      src="/images/like.png"
-                      alt="like icon"
-                      width={15}
-                      height={15}
-                    />
-                    {isLiked ? "Liked" : "Like"}
-                    <Image
-                      src="/images/dot.png"
-                      alt="dot"
-                      width={3}
-                      height={3}
-                    />
-                    {post.likes.length}
-                  </button>
+                    <button
+                      onClick={() => handleLikeDislike(post._id, isLiked)}
+                      className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
+                        isLiked
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-gray-300 text-gray-800"
+                      } ${
+                        likedAnimation === post._id ? "scale-110" : "scale-100"
+                      }`}
+                    >
+                      <Image
+                        src="/images/like.png"
+                        alt="like icon"
+                        width={15}
+                        height={15}
+                      />
+                      {isLiked ? "Liked" : "Like"}
+                      <Image
+                        src="/images/dot.png"
+                        alt="dot"
+                        width={3}
+                        height={3}
+                      />
+                      {post.likes.length}
+                    </button>
                     <p className="flex items-center gap-1 text-xs">
                       <Image
                         src="/images/comment.png"
@@ -272,7 +295,12 @@ const handleLikeDislike = async (postId) => {
                     <p className="flex items-center gap-1 text-xs">
                       {post.comments.length} Comments
                     </p>
-                    <Image src="/images/dot.png" alt="dot" width={3} height={3} />
+                    <Image
+                      src="/images/dot.png"
+                      alt="dot"
+                      width={3}
+                      height={3}
+                    />
                     <p className="flex items-center gap-1 text-xs">
                       {post.comments.length} Impressions
                     </p>
