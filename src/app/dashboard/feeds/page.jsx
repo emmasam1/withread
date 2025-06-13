@@ -207,7 +207,7 @@ const ForYou = () => {
 
               <p>
                 {post.content.slice(0, 100)}...
-                <Link href={`/dashboard/feeds/${post._id}`}>ReadMore</Link>
+                 <Link href={`/dashboard/feeds/${post._id}`} className="text-sm">Read More</Link>
               </p>
             </div>
 
