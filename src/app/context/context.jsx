@@ -12,6 +12,7 @@ export const AppProvider = ({ children }) => {
   const [user, setUserState] = useState(null);
   const [token, setTokenState] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [draftLoading, setDraftLoading] = useState(false);
 
   // Load user and token from sessionStorage on mount
   useEffect(() => {
@@ -67,6 +68,8 @@ export const AppProvider = ({ children }) => {
         setToken,
         loading,
         setLoading,
+        draftLoading,
+        setDraftLoading
       }}
     >
       {children}

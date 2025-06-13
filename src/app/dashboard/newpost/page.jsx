@@ -26,7 +26,7 @@ const stripHtml = (html) => {
 };
 
 const Page = () => {
-  const { API_BASE_URL, loading, user, token, setLoading } = useApp();
+  const { API_BASE_URL, loading, user, token, setLoading, draftLoading, setDraftLoading } = useApp();
   const [activeTab, setActiveTab] = useState("1");
 
   const [title, setTitle] = useState("");
@@ -36,6 +36,7 @@ const Page = () => {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState("");
   const [collaborators, setCollaborators] = useState("");
+  const [status, setStatus] = useState("published");
   const [files, setFiles] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
@@ -135,65 +136,64 @@ const Page = () => {
   }
 };
 
+  const saveToDraft = async () => {
+  if (!title || !content) {
+    toast.warning("Title and content are required.");
+    return;
+  }
 
-  // const addPost = async () => {
-  //   if (!title || !content) {
-  //     toast.warning("Title and content are required.");
-  //     return;
-  //   }
+  setDraftLoading(true);
 
-  //   setLoading(true);
-  //   const formData = new FormData();
+  const formData = new FormData();
+  formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+  formData.append("status", "draft");
+  formData.append("title", stripHtml(title));
+  formData.append("content", stripHtml(content));
+  formData.append("link", link);
+  formData.append("emojis", emojis);
+  formData.append("categories", JSON.stringify([selectedCategoryId]));
+  formData.append("tags", tags);
+  formData.append("collaborators", collaborators);
 
-  //   formData.append("type", activeTab === "1" ? "true" : "false");
-  //   formData.append("title", stripHtml(title));
-  //   formData.append("content", stripHtml(content));
-  //   formData.append("link", link);
-  //   formData.append("emojis", emojis);
-  //   formData.append("categories", JSON.stringify([selectedCategoryId]));
-  //   formData.append("tags", tags);
-  //   formData.append("collaborators", collaborators);
+  files.forEach((file) => {
+    formData.append("images", file);
+  });
 
-  //   files.forEach((file) => {
-  //     formData.append("images", file);
-  //   });
+  // Debug log
+  for (let pair of formData.entries()) {
+    console.log(`${pair[0]}:`, pair[1]);
+  }
 
-  //   try {
-  //     const res = await axios.post(
-  //       `${API_BASE_URL}/api/post/post-feed`,
-  //       formData,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //           "Content-Type": "multipart/form-data",
-  //         },
-  //       }
-  //     );
-  //     console.log(res)
-  //     toast.success("Post submitted successfully!");
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/post/post-feed`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("Success response:", res.data);
+    toast.success(res.data.message || "Post saved to draft successfully!");
 
-
-  //     // Debug log
-  //     // for (let pair of formData.entries()) {
-  //     //   console.log(`${pair[0]}:`, pair[1]);
-  //     // }
-
-  //     // Reset form
-  //     setTitle("");
-  //     setContent("");
-  //     setLink("");
-  //     setEmojis("");
-  //     setSelectedCategoryId("");
-  //     setTags("");
-  //     setCollaborators("");
-  //     setFiles([]);
-  //   } catch (error) {
-  //     console.error("Post submission failed:", error);
-  //     toast.error("Something went wrong while submitting the post.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+    // Reset form
+    setTitle("");
+    setContent("");
+    setLink("");
+    setEmojis("");
+    setSelectedCategoryId("");
+    setTags("");
+    setCollaborators("");
+    setFiles([]);
+  } catch (error) {
+    console.error("Post submission failed:", error.response?.data || error.message);
+    toast.error("Something went wrong while submitting the post.");
+  } finally {
+    setDraftLoading(false);
+  }
+};
 
   return (
     <div className="p-4">
@@ -340,7 +340,7 @@ const Page = () => {
 
         {/* Buttons */}
         <div className="flex justify-end my-4 gap-2">
-          <Button className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8">
+          <Button onClick={saveToDraft} loading={draftLoading} className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8">
             Save to Drafts
           </Button>
           <Button
