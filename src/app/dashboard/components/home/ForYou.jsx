@@ -111,7 +111,7 @@ const ForYou = () => {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
       {posts.map((post, index) => {
         const isLastPost = posts.length === index + 1;
         const initials = `${post?.author?.firstName?.[0] || ""}${post?.author?.lastName?.[0] || ""}`.toUpperCase();
@@ -121,7 +121,7 @@ const ForYou = () => {
           <div
             key={post._id}
             ref={isLastPost ? lastPostRef : null}
-            className="bg-white rounded-lg p-4 shadow-md w-full max-w-3xl mx-auto"
+            className="bg-white rounded-lg p-4 shadow-md w-full mx-auto"
           >
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
