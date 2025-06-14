@@ -10,6 +10,8 @@ import { Button, Dropdown, Space, Input } from "antd";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import EmojiPicker from "emoji-picker-react";
+import SimilarContent from "../../components/SimilarContent";
+import WithReadLoader from "../../components/WithReadLoader";
 
 /* ---------- Small Helpers ---------- */
 const AvatarPlaceholder = ({ text }) => (
@@ -94,52 +96,51 @@ const Page = () => {
   };
 
   const extractEmojis = (text) => {
-  // This regex extracts all emoji characters
-  return (text.match(/([\u231A-\uD83E\uDDFF])/gu) || []).join("");
-};
-
-const addComment = async (postId) => {
-  if (!commentInput.trim()) {
-    toast.error("Comment cannot be empty.");
-    return;
-  }
-
-  const payload = {
-    body: commentInput,
-    emojis: extractEmojis(commentInput),
+    // This regex extracts all emoji characters
+    return (text.match(/([\u231A-\uD83E\uDDFF])/gu) || []).join("");
   };
 
-  console.log('payload', payload)
+  const addComment = async (postId) => {
+    if (!commentInput.trim()) {
+      toast.error("Comment cannot be empty.");
+      return;
+    }
 
-  setLoading(true);
-  try {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/comment/${postId}/comments`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const payload = {
+      body: commentInput,
+      emojis: extractEmojis(commentInput),
+    };
 
-    console.log("comment", res);
+    console.log("payload", payload);
 
-    const refreshed = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    setLoading(true);
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/comment/${postId}/comments`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    setPost(refreshed.data.post);
-    setCommentInput("");
-    toast.success("Comment added.");
-  } catch (error) {
-    console.log(error);
-    toast.error("Failed to add comment.");
-  } finally {
-    setLoading(false);
-  }
-};
+      console.log("comment", res);
 
+      const refreshed = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setPost(refreshed.data.post);
+      setCommentInput("");
+      toast.success("Comment added.");
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to add comment.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEmojiClick = (emojiData) => {
     setCommentInput((prev) => prev + emojiData.emoji);
@@ -181,9 +182,7 @@ const addComment = async (postId) => {
 
   if (!post)
     return (
-      <div className="max-w-3xl mx-auto p-6 text-center text-gray-600">
-        Loading…
-      </div>
+      <WithReadLoader />
     );
 
   const isLiked = post.likes.includes(user._id);
@@ -469,7 +468,9 @@ const addComment = async (postId) => {
         </div>
 
         {/* Right Column Placeholder */}
-        <div className="">hi</div>
+        <div className="">
+          <SimilarContent />
+        </div>
       </div>
     </div>
   );

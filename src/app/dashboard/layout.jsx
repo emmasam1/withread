@@ -50,6 +50,14 @@ export default function DashboardLayout({ children }) {
     router.push("/dashboard"); // or "/" or wherever appropriate
   };
 
+  const createPost = () => {
+    if (!user) {
+      router.push("/signin");
+    } else {
+      router.push("/dashboard/newpost");
+    }
+  };
+
   const items = [
     {
       key: "1",
@@ -394,20 +402,16 @@ export default function DashboardLayout({ children }) {
             />
           </div>
           <div className="flex items-center gap-2.5">
-            {user ? (
-              <Button
-                className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
-                // onClick={showModal}
-              >
-                <Image
-                  src="/images/add.png"
-                  width={20}
-                  height={20}
-                  alt="icon"
-                />
-                <Link href="/dashboard/newpost">New Post</Link>
-              </Button>
-            ) : (
+            <Button
+              className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
+              onClick={createPost}
+            >
+              <Image src="/images/add.png" width={20} height={20} alt="icon" />
+              New Post
+              {/* <Link href="/dashboard/newpost"></Link> */}
+            </Button>
+
+            {user ? null : (
               <Button
                 className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
                 onClick={showModal}
