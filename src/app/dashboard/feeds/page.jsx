@@ -207,7 +207,9 @@ const ForYou = () => {
 
               <p>
                 {post.content.slice(0, 100)}...
-                 <Link href={`/dashboard/feeds/${post._id}`} className="text-sm">Read More</Link>
+                <Link href={`/dashboard/feeds/${post._id}`} className="text-sm">
+                  Read More
+                </Link>
               </p>
             </div>
 
@@ -232,15 +234,17 @@ const ForYou = () => {
                   <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                   {post.likes.length}
                 </button>
-                <p className="flex items-center gap-1 text-xs">
-                  <Image
-                    src="/images/comment.png"
-                    alt="comment icon"
-                    width={15}
-                    height={15}
-                  />
-                  Comments
-                </p>
+                <Link href={`/dashboard/feeds/${post._id}`}>
+                  <p className="flex items-center gap-1 text-xs cursor-pointer">
+                    <Image
+                      src="/images/comment.png"
+                      alt="comment icon"
+                      width={15}
+                      height={15}
+                    />
+                    Comment
+                  </p>
+                </Link>
                 <p className="flex items-center gap-1 text-xs">
                   <Image
                     src="/images/share.png"

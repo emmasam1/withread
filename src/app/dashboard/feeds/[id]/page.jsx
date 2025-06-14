@@ -9,6 +9,7 @@ import Image from "next/image";
 import { Button, Dropdown, Space, Input } from "antd";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import EmojiPicker from "emoji-picker-react";
 
 /* ---------- Small Helpers ---------- */
 const AvatarPlaceholder = ({ text }) => (
@@ -27,13 +28,17 @@ const menuItems = [
 /* ---------------------------------- */
 
 const Page = () => {
-  const { API_BASE_URL, setLoading, token, user } = useApp();
+  const { API_BASE_URL, setLoading, token, user, loading } = useApp();
   const { id: postId } = useParams();
   const [activeTab, setActiveTab] = useState("1");
 
   const [post, setPost] = useState(null);
   const [error, setError] = useState("");
   const [likedAnimation, setLikedAnimation] = useState(null);
+  const [replyingToIndex, setReplyingToIndex] = useState(null);
+  const [replyInputs, setReplyInputs] = useState({});
+  const [commentInput, setCommentInput] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const tabs = [
     { key: "1", label: "Open" },
@@ -88,7 +93,84 @@ const Page = () => {
     }
   };
 
-  console.log(post);
+  const extractEmojis = (text) => {
+  // This regex extracts all emoji characters
+  return (text.match(/([\u231A-\uD83E\uDDFF])/gu) || []).join("");
+};
+
+const addComment = async (postId) => {
+  if (!commentInput.trim()) {
+    toast.error("Comment cannot be empty.");
+    return;
+  }
+
+  const payload = {
+    body: commentInput,
+    emojis: extractEmojis(commentInput),
+  };
+
+  console.log('payload', payload)
+
+  setLoading(true);
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/comment/${postId}/comments`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("comment", res);
+
+    const refreshed = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setPost(refreshed.data.post);
+    setCommentInput("");
+    toast.success("Comment added.");
+  } catch (error) {
+    console.log(error);
+    toast.error("Failed to add comment.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  const handleEmojiClick = (emojiData) => {
+    setCommentInput((prev) => prev + emojiData.emoji);
+  };
+
+  const handleReplySubmit = async (commentId, index) => {
+    const replyText = replyInputs[index]?.trim();
+    if (!replyText) return;
+
+    try {
+      // Make your POST API call here
+      await axios.post(
+        `${API_BASE_URL}/api/post/${postId}/comment/${commentId}/reply`,
+        { text: replyText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Optionally fetch updated comments
+      const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPost(res.data.post);
+
+      // Reset input
+      setReplyingToIndex(null);
+      setReplyInputs((prev) => ({ ...prev, [index]: "" }));
+    } catch (err) {
+      console.error("Reply error:", err);
+      toast.error("Failed to post reply.");
+    }
+  };
 
   if (error)
     return (
@@ -179,7 +261,9 @@ const Page = () => {
 
             {/* Post Title & Content */}
             <h1 className="text-2xl font-bold">{post.title}</h1>
-            <p className="whitespace-pre-wrap text-gray-700">{post.content}</p>
+            <p className="whitespace-pre-wrap text-gray-700 text-sm text-justify">
+              {post.content}
+            </p>
 
             {/* Footer */}
             <div className="flex justify-between items-center mt-3">
@@ -228,6 +312,8 @@ const Page = () => {
               </div>
             </div>
           </div>
+
+          {/* Comments Section */}
           <div className="mt-8 bg-white rounded-md p-3">
             <div className="flex w-full items-center justify-between">
               <h1 className="font-semibold">Comments</h1>
@@ -254,66 +340,135 @@ const Page = () => {
               </div>
             </div>
 
-            <div className="mt-6">
-              <Input
-                placeholder="Add your comment"
-                className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none"
-              />
+            <div className="mt-6 flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <Input
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  placeholder="Add your comment"
+                  className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none flex-1"
+                />
+                <Button
+                  className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8"
+                  onClick={() => addComment(post._id)}
+                  loading={loading}
+                >
+                  Comment
+                </Button>
+                <motion.button
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className="cursor-pointer"
+                >
+                  <Image
+                    src="/images/emoji.png"
+                    alt="emoji"
+                    width={24}
+                    height={24}
+                  />
+                </motion.button>
+              </div>
+
+              {showEmojiPicker && (
+                <div className="mt-2">
+                  <EmojiPicker
+                    onEmojiClick={handleEmojiClick}
+                    height={350}
+                    width="100%"
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="mt-5">
-              <div className="flex gap-3 items-center">
-                <div>
-                  <Image
-                    src={post?.author?.avatar} // fallback in case avatar is null
-                    alt="user image"
-                    width={45}
-                    height={45}
-                    className="rounded-full"
-                  />
-                </div>
-                <div>
-                  <h2 className="font-semibold text-sm">Alex jumbo</h2>
-                  <p className="text-xs text-[#333333CC]">Alex jumbo</p>
-                </div>
-              </div>
+            <div className="mt-6 space-y-6">
+              {post.comments.map((comment, index) => (
+                <div key={comment._id || index}>
+                  <div className="flex gap-3 items-center">
+                    <div>
+                      <Image
+                        src={
+                          comment.user?.avatar || "/images/default-avatar.png"
+                        }
+                        alt="user"
+                        width={45}
+                        height={45}
+                        className="rounded-full"
+                      />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-sm">
+                        {comment.user?.firstName} {comment.user?.lastName}
+                      </h2>
+                      <p className="text-xs text-[#333333CC]">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
 
-              <p className="text-sm">
-                This is really impressive! Your content is always on point
-                ramsey, keep the energy moving and keep it up.
-              </p>
-              <div className="flex gap-6 items-center mt-2">
-                <button
-                  className="cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300">
-                  <Image
-                    src="/images/like.png"
-                    alt="like icon"
-                    width={15}
-                    height={15}
-                  />
-                  Like
-                  <Image src="/images/dot.png" alt="dot" width={3} height={3} />
-                  {post.likes.length}
-                </button>
-                <button
-                  className="cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300">
-                  <Image
-                    src="/images/comment.png"
-                    alt="like icon"
-                    width={15}
-                    height={15}
-                  />
-                  Reply
-                  <Image src="/images/dot.png" alt="dot" width={3} height={3} />
-                  {post.likes.length}
-                </button>
-                
-              </div>
+                  <p className="text-sm mt-2">{comment.text}</p>
+
+                  <div className="flex gap-6 items-center mt-2">
+                    <button className="cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3">
+                      <Image
+                        src="/images/like.png"
+                        alt="like icon"
+                        width={15}
+                        height={15}
+                      />
+                      Like
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        setReplyingToIndex(
+                          replyingToIndex === index ? null : index
+                        )
+                      }
+                      className="cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3"
+                    >
+                      <Image
+                        src="/images/comment.png"
+                        alt="reply"
+                        width={15}
+                        height={15}
+                      />
+                      Reply
+                    </button>
+                  </div>
+
+                  {replyingToIndex === index && (
+                    <div className="mt-3">
+                      <Input.TextArea
+                        placeholder="Write your reply..."
+                        autoSize={{ minRows: 2, maxRows: 5 }}
+                        value={replyInputs[index] || ""}
+                        onChange={(e) =>
+                          setReplyInputs({
+                            ...replyInputs,
+                            [index]: e.target.value,
+                          })
+                        }
+                        className="!bg-[#F6F6F6] !border-none !outline-none !rounded-md !px-3 !py-2 focus:ring-0 focus:outline-none"
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          size="small"
+                          type="primary"
+                          onClick={() => handleReplySubmit(comment._id, index)}
+                        >
+                          Send
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Right Column */}
+        {/* Right Column Placeholder */}
         <div className="">hi</div>
       </div>
     </div>
