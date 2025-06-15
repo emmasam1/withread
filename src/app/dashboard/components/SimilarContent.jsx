@@ -39,9 +39,9 @@ const SimilarContent = () => {
         </p>
 
         <div className="flex items-center gap-3 mt-2">
-          {user.avatar ? (
+          {user?.avatar ? (
             <Image
-              src={user.avatar}
+              src={user?.avatar}
               alt="post image"
               width={45}
               height={45}
@@ -72,9 +72,9 @@ const SimilarContent = () => {
         </p>
 
         <div className="flex items-center gap-3 mt-2">
-          {user.avatar ? (
+          {user?.avatar ? (
             <Image
-              src={user.avatar}
+              src={user?.avatar}
               alt="post image"
               width={45}
               height={45}
@@ -105,9 +105,9 @@ const SimilarContent = () => {
         </p>
 
         <div className="flex items-center gap-3 mt-2">
-          {user.avatar ? (
+          {user?.avatar ? (
             <Image
-              src={user.avatar}
+              src={user?.avatar}
               alt="post image"
               width={45}
               height={45}
@@ -138,9 +138,9 @@ const SimilarContent = () => {
         </p>
 
         <div className="flex items-center gap-3 mt-2">
-          {user.avatar ? (
+          {user?.avatar ? (
             <Image
-              src={user.avatar}
+              src={user?.avatar}
               alt="post image"
               width={45}
               height={45}

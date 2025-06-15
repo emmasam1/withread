@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 import EmojiPicker from "emoji-picker-react";
 import SimilarContent from "../../components/SimilarContent";
 import WithReadLoader from "../../components/WithReadLoader";
+import { useRouter } from "next/navigation";
 
 /* ---------- Small Helpers ---------- */
 const AvatarPlaceholder = ({ text }) => (
@@ -48,14 +49,13 @@ const Page = () => {
   ];
 
   useEffect(() => {
-    if (!API_BASE_URL || !postId || !token) return;
+    if (!API_BASE_URL || !postId) return;
 
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`)
+        console.log(res)
         setPost(res.data.post);
       } catch (err) {
         console.error("Error fetching post:", err);
@@ -101,46 +101,53 @@ const Page = () => {
   };
 
   const addComment = async (postId) => {
-    if (!commentInput.trim()) {
-      toast.error("Comment cannot be empty.");
-      return;
-    }
+  if (!user) {
+    toast.error("You need to log in to comment.");
+    Router.push("/signin");
+    return; // Important: Stop execution after redirect
+  }
 
-    const payload = {
-      body: commentInput,
-      emojis: extractEmojis(commentInput),
-    };
+  if (!commentInput.trim()) {
+    toast.error("Comment cannot be empty.");
+    return;
+  }
 
-    console.log("payload", payload);
-
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/comment/${postId}/comments`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("comment", res);
-
-      const refreshed = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setPost(refreshed.data.post);
-      setCommentInput("");
-      toast.success("Comment added.");
-    } catch (error) {
-      console.log(error);
-      toast.error("Failed to add comment.");
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    body: commentInput.trim(),
+    emojis: extractEmojis(commentInput),
   };
+
+  console.log("payload", payload);
+  setLoading(true);
+
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/comment/${postId}/comments`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("comment response:", res);
+
+    const refreshed = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setPost(refreshed.data.post);
+    setCommentInput("");
+    toast.success("Comment added.");
+  } catch (error) {
+    console.error("Add comment failed:", error);
+    toast.error("Failed to add comment.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleEmojiClick = (emojiData) => {
     setCommentInput((prev) => prev + emojiData.emoji);
@@ -185,7 +192,7 @@ const Page = () => {
       <WithReadLoader />
     );
 
-  const isLiked = post.likes.includes(user._id);
+  const isLiked = post.likes.includes(user?._id);
   const initials = `${post?.author?.firstName?.[0] || ""}${
     post?.author?.lastName?.[0] || ""
   }`.toUpperCase();
