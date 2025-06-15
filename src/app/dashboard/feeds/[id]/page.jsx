@@ -42,6 +42,7 @@ const Page = () => {
   const [replyInputs, setReplyInputs] = useState({});
   const [commentInput, setCommentInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [comments, setComments] = useState([]);
 
   const tabs = [
     { key: "1", label: "Open" },
@@ -54,8 +55,8 @@ const Page = () => {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`)
-        console.log(res)
+        const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
+        // console.log(res);
         setPost(res.data.post);
       } catch (err) {
         console.error("Error fetching post:", err);
@@ -101,53 +102,59 @@ const Page = () => {
   };
 
   const addComment = async (postId) => {
-  if (!user) {
-    toast.error("You need to log in to comment.");
-    Router.push("/signin");
-    return; // Important: Stop execution after redirect
-  }
+    if (!user) {
+      toast.error("You need to log in to comment.");
+      Router.push("/signin");
+      return; // Important: Stop execution after redirect
+    }
 
-  if (!commentInput.trim()) {
-    toast.error("Comment cannot be empty.");
-    return;
-  }
+    if (!commentInput.trim()) {
+      toast.error("Comment cannot be empty.");
+      return;
+    }
 
-  const payload = {
-    body: commentInput.trim(),
-    emojis: extractEmojis(commentInput),
+    const payload = {
+      body: commentInput.trim(),
+      emojis: extractEmojis(commentInput),
+    };
+
+    console.log("payload", payload);
+    setLoading(true);
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/comment/${postId}/comments`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setCommentInput("");
+      toast.success("Comment added.");
+    } catch (error) {
+      console.error("Add comment failed:", error);
+      toast.error("Failed to add comment.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  console.log("payload", payload);
-  setLoading(true);
+  useEffect(() => {
+    const getComment = async () => {
+      const url = `${API_BASE_URL}/api/comment/${postId}`;
 
-  try {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/comment/${postId}/comments`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      try {
+        const res = await axios.get(url);
+        setComments(res.data.comments);
+        console.log("comments", res.data.comments);
+      } catch (error) {
+        console.log(error);
       }
-    );
-
-    console.log("comment response:", res);
-
-    const refreshed = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    setPost(refreshed.data.post);
-    setCommentInput("");
-    toast.success("Comment added.");
-  } catch (error) {
-    console.error("Add comment failed:", error);
-    toast.error("Failed to add comment.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+    };
+    getComment();
+  }, [API_BASE_URL, postId]);
 
   const handleEmojiClick = (emojiData) => {
     setCommentInput((prev) => prev + emojiData.emoji);
@@ -187,15 +194,24 @@ const Page = () => {
       </div>
     );
 
-  if (!post)
-    return (
-      <WithReadLoader />
-    );
+  if (!post) return <WithReadLoader />;
 
   const isLiked = post.likes.includes(user?._id);
   const initials = `${post?.author?.firstName?.[0] || ""}${
     post?.author?.lastName?.[0] || ""
   }`.toUpperCase();
+
+ const getUserInitials = (user) => {
+  if (!user) return "??";
+  const first = user.firstName?.trim()?.[0] || "";
+  const last = user.lastName?.trim()?.[0] || "";
+  return (first + last).toUpperCase() || "??";
+};
+
+
+  const AvatarPlaceholder = ({ text }) => (
+    <h1 className="font-semibold text-gray-400">{text}</h1>
+  );
 
   return (
     <div className="p-4">
@@ -388,19 +404,24 @@ const Page = () => {
             </div>
 
             <div className="mt-6 space-y-6">
-              {post.comments.map((comment, index) => (
+              {comments.map((comment, index) => (
                 <div key={comment._id || index}>
-                  <div className="flex gap-3 items-center">
+                  <div className="bg-[#F9FAFB] p-4 rounded-md">
+                    <div className="flex gap-3 items-center">
                     <div>
-                      <Image
-                        src={
-                          comment.user?.avatar || "/images/default-avatar.png"
-                        }
-                        alt="user"
-                        width={45}
-                        height={45}
-                        className="rounded-full"
-                      />
+                      {user?.avatar ? (
+                        <Image
+                          src={user?.avatar}
+                          alt="post image"
+                          width={45}
+                          height={45}
+                          className="w-full object-cover rounded-md"
+                        />
+                      ) : (
+                        <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
+                          <AvatarPlaceholder text={getUserInitials(comment.user)} />
+                        </div>
+                      )}
                     </div>
                     <div>
                       <h2 className="font-semibold text-sm">
@@ -412,7 +433,7 @@ const Page = () => {
                     </div>
                   </div>
 
-                  <p className="text-sm mt-2">{comment.text}</p>
+                  <p className="text-sm mt-2">{comment.body}</p>
 
                   <div className="flex gap-6 items-center mt-2">
                     <button className="cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3">
@@ -443,6 +464,7 @@ const Page = () => {
                     </button>
                   </div>
 
+                  </div>
                   {replyingToIndex === index && (
                     <div className="mt-3">
                       <Input.TextArea
