@@ -43,6 +43,7 @@ const Page = () => {
   const [commentInput, setCommentInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [comments, setComments] = useState([]);
+  const router = useRouter();
 
   const tabs = [
     { key: "1", label: "Open" },
@@ -104,8 +105,8 @@ const Page = () => {
   const addComment = async (postId) => {
     if (!user) {
       toast.error("You need to log in to comment.");
-      Router.push("/signin");
-      return; // Important: Stop execution after redirect
+      router.push("/signin");
+      return;
     }
 
     if (!commentInput.trim()) {
@@ -118,10 +119,8 @@ const Page = () => {
       emojis: extractEmojis(commentInput),
     };
 
-    console.log("payload", payload);
-    setLoading(true);
-
     try {
+      setLoading(true);
       const res = await axios.post(
         `${API_BASE_URL}/api/comment/${postId}/comments`,
         payload,
@@ -131,8 +130,16 @@ const Page = () => {
           },
         }
       );
+
+      const newComment = res.data.comment;
+
+      // 🔁 Update local state with new comment
+      setComments((prev) => [newComment, ...prev]);
+
+      // ✅ Reset input
       setCommentInput("");
       toast.success("Comment added.");
+      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Add comment failed:", error);
       toast.error("Failed to add comment.");
@@ -156,35 +163,63 @@ const Page = () => {
     getComment();
   }, [API_BASE_URL, postId]);
 
+
+  const handleReplySubmit = async (commentIdFromProp, index) => {
+  const replyText = replyInputs[index]?.trim();
+  if (!replyText) return;
+
+  const commentId = comments[index]?._id;
+  if (!commentId) {
+    toast.error("Unable to find comment ID.");
+    return;
+  }
+
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/comment/${commentId}/reply`,
+      { body: replyText },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("REPLY POST response:", res.data);
+
+    // ✅ Use the correct field from response
+    let newReply = res.data.comment;
+
+    // 🛠 Ensure createdAt exists
+    if (!newReply.createdAt) {
+      newReply.createdAt = new Date().toISOString();
+    }
+
+    // ✅ Update local state
+    setComments((prevComments) =>
+      prevComments.map((comment, i) =>
+        i === index
+          ? {
+              ...comment,
+              replies: [...(comment.replies || []), newReply],
+            }
+          : comment
+      )
+    );
+
+    // ✅ Reset reply UI state
+    setReplyingToIndex(null);
+    setReplyInputs((prev) => ({ ...prev, [index]: "" }));
+    toast.success("Reply posted.");
+  } catch (err) {
+    console.error("Reply error:", err);
+    toast.error("Failed to post reply.");
+  }
+};
+
+
   const handleEmojiClick = (emojiData) => {
     setCommentInput((prev) => prev + emojiData.emoji);
-  };
-
-  const handleReplySubmit = async (commentId, index) => {
-    const replyText = replyInputs[index]?.trim();
-    if (!replyText) return;
-
-    try {
-      // Make your POST API call here
-      await axios.post(
-        `${API_BASE_URL}/api/post/${postId}/comment/${commentId}/reply`,
-        { text: replyText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Optionally fetch updated comments
-      const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setPost(res.data.post);
-
-      // Reset input
-      setReplyingToIndex(null);
-      setReplyInputs((prev) => ({ ...prev, [index]: "" }));
-    } catch (err) {
-      console.error("Reply error:", err);
-      toast.error("Failed to post reply.");
-    }
   };
 
   if (error)
@@ -201,13 +236,12 @@ const Page = () => {
     post?.author?.lastName?.[0] || ""
   }`.toUpperCase();
 
- const getUserInitials = (user) => {
-  if (!user) return "??";
-  const first = user.firstName?.trim()?.[0] || "";
-  const last = user.lastName?.trim()?.[0] || "";
-  return (first + last).toUpperCase() || "??";
-};
-
+  const getUserInitials = (user) => {
+    if (!user) return "??";
+    const first = user.firstName?.trim()?.[0] || "";
+    const last = user.lastName?.trim()?.[0] || "";
+    return (first + last).toUpperCase() || "??";
+  };
 
   const AvatarPlaceholder = ({ text }) => (
     <h1 className="font-semibold text-gray-400">{text}</h1>
@@ -403,93 +437,133 @@ const Page = () => {
               )}
             </div>
 
-            <div className="mt-6 space-y-6">
+            <div className="space-y-6 mt-6">
               {comments.map((comment, index) => (
-                <div key={comment._id || index}>
-                  <div className="bg-[#F9FAFB] p-4 rounded-md">
-                    <div className="flex gap-3 items-center">
-                    <div>
-                      {user?.avatar ? (
+                <div
+                  key={comment._id}
+                  className="bg-blue-50 p-4 rounded-lg shadow-sm"
+                >
+                  {/* Comment Header */}
+                  <div className="flex gap-3 items-start">
+                    <div className="shrink-0">
+                      {comment.user?.avatar ? (
                         <Image
-                          src={user?.avatar}
-                          alt="post image"
+                          src={comment.user.avatar}
+                          alt="avatar"
                           width={45}
                           height={45}
-                          className="w-full object-cover rounded-md"
+                          className="rounded-full"
                         />
                       ) : (
-                        <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
-                          <AvatarPlaceholder text={getUserInitials(comment.user)} />
+                        <div className="bg-gray-200 w-12 h-12 flex items-center justify-center rounded-full">
+                          <AvatarPlaceholder
+                            text={getUserInitials(comment.user)}
+                          />
                         </div>
                       )}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h2 className="font-semibold text-sm">
                         {comment.user?.firstName} {comment.user?.lastName}
                       </h2>
-                      <p className="text-xs text-[#333333CC]">
+                      <p className="text-xs text-gray-500">
                         {new Date(comment.createdAt).toLocaleString()}
                       </p>
-                    </div>
-                  </div>
+                      <p className="mt-2 text-sm text-gray-800">
+                        {comment.body}
+                      </p>
 
-                  <p className="text-sm mt-2">{comment.body}</p>
-
-                  <div className="flex gap-6 items-center mt-2">
-                    <button className="cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3">
-                      <Image
-                        src="/images/like.png"
-                        alt="like icon"
-                        width={15}
-                        height={15}
-                      />
-                      Like
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        setReplyingToIndex(
-                          replyingToIndex === index ? null : index
-                        )
-                      }
-                      className="cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3"
-                    >
-                      <Image
-                        src="/images/comment.png"
-                        alt="reply"
-                        width={15}
-                        height={15}
-                      />
-                      Reply
-                    </button>
-                  </div>
-
-                  </div>
-                  {replyingToIndex === index && (
-                    <div className="mt-3">
-                      <Input.TextArea
-                        placeholder="Write your reply..."
-                        autoSize={{ minRows: 2, maxRows: 5 }}
-                        value={replyInputs[index] || ""}
-                        onChange={(e) =>
-                          setReplyInputs({
-                            ...replyInputs,
-                            [index]: e.target.value,
-                          })
-                        }
-                        className="!bg-[#F6F6F6] !border-none !outline-none !rounded-md !px-3 !py-2 focus:ring-0 focus:outline-none"
-                      />
-                      <div className="mt-2 flex justify-end">
-                        <Button
-                          size="small"
-                          type="primary"
-                          onClick={() => handleReplySubmit(comment._id, index)}
+                      {/* Comment actions */}
+                      <div className="flex gap-4 mt-2 text-xs text-blue-600">
+                        <button>Like</button>
+                        <button
+                          onClick={() =>
+                            setReplyingToIndex(
+                              replyingToIndex === index ? null : index
+                            )
+                          }
                         >
-                          Send
-                        </Button>
+                          Reply
+                        </button>
                       </div>
+
+                      {/* Reply Input */}
+                      {replyingToIndex === index && (
+                        <div className="mt-3">
+                          <Input.TextArea
+                            placeholder="Write a reply..."
+                            value={replyInputs[index] || ""}
+                            onChange={(e) =>
+                              setReplyInputs({
+                                ...replyInputs,
+                                [index]: e.target.value,
+                              })
+                            }
+                          />
+                          <div className="mt-2 flex justify-end">
+                            <Button
+                              size="small"
+                              type="primary"
+                              onClick={() =>
+                                handleReplySubmit(comment._id, index)
+                              }
+                            >
+                              Send
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Replies */}
+                      {Array.isArray(comment.replies) &&
+                        comment.replies.length > 0 && (
+                          <div className="mt-4 space-y-4 pl-6 border-l border-gray-200">
+                            {comment.replies.map((reply) => (
+                              <div
+                                key={reply?._id}
+                                className="bg-white p-3 rounded-md shadow-sm"
+                              >
+                                <div className="flex gap-3 items-start">
+                                  <div className="shrink-0">
+                                    {reply?.user?.avatar ? (
+                                      <Image
+                                        src={reply?.user?.avatar}
+                                        alt="avatar"
+                                        width={35}
+                                        height={35}
+                                        className="rounded-full"
+                                      />
+                                    ) : (
+                                      <div className="bg-gray-200 w-10 h-10 flex items-center justify-center rounded-full">
+                                        <AvatarPlaceholder
+                                          text={getUserInitials(reply?.user)}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h3 className="font-medium text-sm">
+                                      {reply?.user?.firstName}{" "}
+                                      {reply?.user?.lastName}
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                      {reply?.createdAt
+                                        ? new Date(
+                                            reply?.createdAt
+                                          ).toLocaleString()
+                                        : "Just now"}
+                                    </p>
+                                    <p className="mt-1 text-sm text-gray-800">
+                                      {reply?.body}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
