@@ -63,9 +63,7 @@ export default function DashboardLayout({ children }) {
       key: "1",
       label: (
         <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://www.antgroup.com"
+          href="/dashboard/profile"
           className="flex !text-[#D9D9D9] items-center gap-3"
         >
           <Image src="/images/profile.png" alt="icon" width={17} height={10} />{" "}

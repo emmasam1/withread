@@ -163,60 +163,58 @@ const Page = () => {
     getComment();
   }, [API_BASE_URL, postId]);
 
-
   const handleReplySubmit = async (commentIdFromProp, index) => {
-  const replyText = replyInputs[index]?.trim();
-  if (!replyText) return;
+    const replyText = replyInputs[index]?.trim();
+    if (!replyText) return;
 
-  const commentId = comments[index]?._id;
-  if (!commentId) {
-    toast.error("Unable to find comment ID.");
-    return;
-  }
-
-  try {
-    const res = await axios.post(
-      `${API_BASE_URL}/api/comment/${commentId}/reply`,
-      { body: replyText },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    console.log("REPLY POST response:", res.data);
-
-    // ✅ Use the correct field from response
-    let newReply = res.data.comment;
-
-    // 🛠 Ensure createdAt exists
-    if (!newReply.createdAt) {
-      newReply.createdAt = new Date().toISOString();
+    const commentId = comments[index]?._id;
+    if (!commentId) {
+      toast.error("Unable to find comment ID.");
+      return;
     }
 
-    // ✅ Update local state
-    setComments((prevComments) =>
-      prevComments.map((comment, i) =>
-        i === index
-          ? {
-              ...comment,
-              replies: [...(comment.replies || []), newReply],
-            }
-          : comment
-      )
-    );
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/comment/${commentId}/reply`,
+        { body: replyText },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    // ✅ Reset reply UI state
-    setReplyingToIndex(null);
-    setReplyInputs((prev) => ({ ...prev, [index]: "" }));
-    toast.success("Reply posted.");
-  } catch (err) {
-    console.error("Reply error:", err);
-    toast.error("Failed to post reply.");
-  }
-};
+      console.log("REPLY POST response:", res.data);
 
+      // ✅ Use the correct field from response
+      let newReply = res.data.comment;
+
+      // 🛠 Ensure createdAt exists
+      if (!newReply.createdAt) {
+        newReply.createdAt = new Date().toISOString();
+      }
+
+      // ✅ Update local state
+      setComments((prevComments) =>
+        prevComments.map((comment, i) =>
+          i === index
+            ? {
+                ...comment,
+                replies: [...(comment.replies || []), newReply],
+              }
+            : comment
+        )
+      );
+
+      // ✅ Reset reply UI state
+      setReplyingToIndex(null);
+      setReplyInputs((prev) => ({ ...prev, [index]: "" }));
+      toast.success("Reply posted.");
+    } catch (err) {
+      console.error("Reply error:", err);
+      toast.error("Failed to post reply.");
+    }
+  };
 
   const handleEmojiClick = (emojiData) => {
     setCommentInput((prev) => prev + emojiData.emoji);
