@@ -28,8 +28,7 @@ const PostGrid = ({
         });
 
         if (res.data.success) {
-          // Handle both `posts` and `drafts`
-          setData(res.data.posts || res.data.drafts || []);
+          setData(res.data.posts || res.data.drafts || res.data.savedPosts || []);
         } else {
           toast.error("Failed to fetch posts");
         }
@@ -45,9 +44,11 @@ const PostGrid = ({
   }, [API_BASE_URL, token, endpoint]);
 
   return (
-    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="mt-6 min-h-[300px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {loading ? (
-        <WithReadLoader />
+        <div className="col-span-full flex items-center justify-center">
+          <WithReadLoader size={100}/>
+        </div>
       ) : data && data.length > 0 ? (
         data.map((item) => (
           <Card
@@ -63,12 +64,15 @@ const PostGrid = ({
           >
             <Meta
               title={item[titleKey] || "Untitled Post"}
-              description={item[descriptionKey]?.slice(0, 100) || "No description available."}
+              description={
+                item[descriptionKey]?.slice(0, 100) ||
+                "No description available."
+              }
             />
           </Card>
         ))
       ) : (
-        <div className="col-span-3 text-center">
+        <div className="col-span-full text-center">
           <p>{emptyMessage}</p>
         </div>
       )}

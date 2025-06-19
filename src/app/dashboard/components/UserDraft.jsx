@@ -83,10 +83,12 @@ import PostGrid from "./reusables/PostGrid";
 const UserDraft = () => {
   return (
     <PostGrid
-      endpoint="/api/post/user/drafts"
+      endpoint="/api/post/user/saved-post"
       emptyMessage="No drafted posts yet."
     />
   );
 };
 
 export default UserDraft;
+
+

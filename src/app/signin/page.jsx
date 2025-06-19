@@ -28,6 +28,8 @@ const Page = () => {
       setUser(user);
       setToken(token);
 
+      console.log(res)
+
       sessionStorage.setItem("user", JSON.stringify(user));
       sessionStorage.setItem("token", token);
 

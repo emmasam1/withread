@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useApp } from "../../../context/context";
 import Link from "next/link";
 import Image from "next/image";
@@ -12,7 +12,6 @@ import { motion } from "framer-motion";
 import EmojiPicker from "emoji-picker-react";
 import SimilarContent from "../../components/SimilarContent";
 import WithReadLoader from "../../components/WithReadLoader";
-import { useRouter } from "next/navigation";
 
 /* ---------- Small Helpers ---------- */
 const AvatarPlaceholder = ({ text }) => (
@@ -30,11 +29,12 @@ const menuItems = [
 ];
 /* ---------------------------------- */
 
-const Page = () => {
+export default function Page() {
   const { API_BASE_URL, setLoading, token, user, loading } = useApp();
   const { id: postId } = useParams();
-  const [activeTab, setActiveTab] = useState("1");
+  const router = useRouter();
 
+  /* ----- Local state ----- */
   const [post, setPost] = useState(null);
   const [error, setError] = useState("");
   const [likedAnimation, setLikedAnimation] = useState(null);
@@ -43,13 +43,15 @@ const Page = () => {
   const [commentInput, setCommentInput] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [comments, setComments] = useState([]);
-  const router = useRouter();
+  const [savedPost, setSavedPost] = useState(false);
+  const [activeTab, setActiveTab] = useState("1");
 
   const tabs = [
     { key: "1", label: "Open" },
     { key: "2", label: "Anonymous" },
   ];
 
+  /* ----- Fetch post ----- */
   useEffect(() => {
     if (!API_BASE_URL || !postId) return;
 
@@ -57,8 +59,13 @@ const Page = () => {
       try {
         setLoading(true);
         const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
-        // console.log(res);
-        setPost(res.data.post);
+        const fetchedPost = res.data.post;
+        setPost(fetchedPost);
+
+        // ✅  Check if already saved
+        if (user && fetchedPost.savedBy?.includes(user._id)) {
+          setSavedPost(true);
+        }
       } catch (err) {
         console.error("Error fetching post:", err);
         setError("Post not found.");
@@ -68,41 +75,41 @@ const Page = () => {
     };
 
     fetchPost();
-  }, [API_BASE_URL, postId, token, setLoading]);
+  }, [API_BASE_URL, postId, user, setLoading]);
 
-  const handleLikeDislike = async (postId) => {
+  /* ----- Like / Dislike ----- */
+  const handleLikeDislike = async () => {
     if (!token) return toast.error("You need to log in to like posts.");
     if (!post) return;
 
     const isLiked = post.likes.includes(user._id);
 
     if (!isLiked) {
-      setLikedAnimation(postId);
+      setLikedAnimation(post._id);
       setTimeout(() => setLikedAnimation(null), 300);
     }
 
     try {
       const action = isLiked ? "dislike" : "like";
-      const res = await axios.put(
-        `${API_BASE_URL}/api/post/${postId}/like-dislike`,
+      const { data } = await axios.put(
+        `${API_BASE_URL}/api/post/${post._id}/like-dislike`,
         { action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setPost(res.data.post);
-      toast.success(res.data.message);
+      setPost(data.post);
+      toast.success(data.message);
     } catch (err) {
       console.error("Like error:", err);
       toast.error("Something went wrong. Please try again.");
     }
   };
 
-  const extractEmojis = (text) => {
-    // This regex extracts all emoji characters
-    return (text.match(/([\u231A-\uD83E\uDDFF])/gu) || []).join("");
-  };
+  /* ----- Comment helpers ----- */
+  const extractEmojis = (text) =>
+    (text.match(/([\u231A-\uD83E\uDDFF])/gu) || []).join("");
 
-  const addComment = async (postId) => {
+  const addComment = async () => {
     if (!user) {
       toast.error("You need to log in to comment.");
       router.push("/signin");
@@ -121,62 +128,105 @@ const Page = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post(
-        `${API_BASE_URL}/api/comment/${postId}/comments`,
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/comment/${post._id}/comments`,
         payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const newComment = res.data.comment;
-
-      // 🔁 Update local state with new comment
-      setComments((prev) => [newComment, ...prev]);
-
-      // ✅ Reset input
+      setComments((prev) => [data.comment, ...prev]);
       setCommentInput("");
       toast.success("Comment added.");
       setShowEmojiPicker(false);
-    } catch (error) {
-      console.error("Add comment failed:", error);
+    } catch (err) {
+      console.error("Add comment failed:", err);
       toast.error("Failed to add comment.");
     } finally {
       setLoading(false);
     }
   };
 
+  /* ----- Fetch comments list ----- */
   useEffect(() => {
-    const getComment = async () => {
-      const url = `${API_BASE_URL}/api/comment/${postId}`;
+    if (!API_BASE_URL || !postId) return;
 
+    (async () => {
       try {
-        const res = await axios.get(url);
-        setComments(res.data.comments);
-        console.log("comments", res.data.comments);
-      } catch (error) {
-        console.log(error);
+        const { data } = await axios.get(
+          `${API_BASE_URL}/api/comment/${postId}`
+        );
+        setComments(data.comments);
+      } catch (err) {
+        console.error("Fetch comments error:", err);
       }
-    };
-    getComment();
+    })();
   }, [API_BASE_URL, postId]);
 
-  const handleReplySubmit = async (commentIdFromProp, index) => {
+  /* ----- Reply submit ----- */
+  const handleReplySubmit = async (commentId, index) => {
     const replyText = replyInputs[index]?.trim();
     if (!replyText) return;
 
-    const commentId = comments[index]?._id;
-    if (!commentId) {
-      toast.error("Unable to find comment ID.");
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/comment/${commentId}/reply`,
+        { body: replyText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setComments((prev) =>
+        prev.map((c, i) =>
+          i === index
+            ? { ...c, replies: [...(c.replies || []), data.comment] }
+            : c
+        )
+      );
+      setReplyingToIndex(null);
+      setReplyInputs((prev) => ({ ...prev, [index]: "" }));
+    } catch (err) {
+      console.error("Reply error:", err);
+      toast.error("Failed to post reply.");
+    }
+  };
+
+  /* ----- Save post ----- */
+  // const savePost = async () => {
+  //   if (!token) return toast.error("You need to log in to save posts.");
+  //   if (savedPost) return toast.error("You have already saved this post.");
+
+  //   try {
+  //     setLoading(true);
+  //     const { data } = await axios.put(
+  //       `${API_BASE_URL}/api/post/user/${postId}/save`,
+  //       {},
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+
+  //     if (data.success) {
+  //       toast.success("Post saved successfully.");
+  //       setSavedPost(true);
+  //     } else {
+  //       toast.error("Failed to save post.");
+  //     }
+  //   } catch (err) {
+  //     console.error("Save post error:", err);
+  //     toast.error("Something went wrong. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const toggleSavePost = async () => {
+    if (!token || !postId) {
+      toast.error("You need to log in.");
       return;
     }
 
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/comment/${commentId}/reply`,
-        { body: replyText },
+      setLoading(true);
+      const res = await axios.put(
+        `${API_BASE_URL}/api/post/user/${postId}/save`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -184,42 +234,24 @@ const Page = () => {
         }
       );
 
-      console.log("REPLY POST response:", res.data);
+      console.log("Save/Unsave Response:", res.data); // 🔍 log full response
 
-      // ✅ Use the correct field from response
-      let newReply = res.data.comment;
-
-      // 🛠 Ensure createdAt exists
-      if (!newReply.createdAt) {
-        newReply.createdAt = new Date().toISOString();
+      if (res.data.success) {
+        const wasSaved = savedPost;
+        setSavedPost(!wasSaved);
+        toast.success(!wasSaved ? "Post saved successfully." : "Post unsaved.");
+      } else {
+        toast.error("Failed to update saved status.");
       }
-
-      // ✅ Update local state
-      setComments((prevComments) =>
-        prevComments.map((comment, i) =>
-          i === index
-            ? {
-                ...comment,
-                replies: [...(comment.replies || []), newReply],
-              }
-            : comment
-        )
-      );
-
-      // ✅ Reset reply UI state
-      setReplyingToIndex(null);
-      setReplyInputs((prev) => ({ ...prev, [index]: "" }));
-      toast.success("Reply posted.");
-    } catch (err) {
-      console.error("Reply error:", err);
-      toast.error("Failed to post reply.");
+    } catch (error) {
+      console.error("Toggle save error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEmojiClick = (emojiData) => {
-    setCommentInput((prev) => prev + emojiData.emoji);
-  };
-
+  /* ---------- early returns ---------- */
   if (error)
     return (
       <div className="max-w-3xl mx-auto p-6 text-center text-red-600">
@@ -227,24 +259,27 @@ const Page = () => {
       </div>
     );
 
-  if (!post) return <WithReadLoader />;
+  if (!post)
+    return (
+      <div className="flex h-full items-center justify-center">
+        <WithReadLoader />
+      </div>
+    );
 
+  /* ---------- derived helpers ---------- */
   const isLiked = post.likes.includes(user?._id);
   const initials = `${post?.author?.firstName?.[0] || ""}${
     post?.author?.lastName?.[0] || ""
   }`.toUpperCase();
 
-  const getUserInitials = (user) => {
-    if (!user) return "??";
-    const first = user.firstName?.trim()?.[0] || "";
-    const last = user.lastName?.trim()?.[0] || "";
+  const getUserInitials = (u) => {
+    if (!u) return "??";
+    const first = u.firstName?.trim()?.[0] || "";
+    const last = u.lastName?.trim()?.[0] || "";
     return (first + last).toUpperCase() || "??";
   };
 
-  const AvatarPlaceholder = ({ text }) => (
-    <h1 className="font-semibold text-gray-400">{text}</h1>
-  );
-
+  /* ---------- JSX ---------- */
   return (
     <div className="p-4">
       {/* Back Link */}
@@ -323,7 +358,7 @@ const Page = () => {
             <div className="flex justify-between items-center mt-3">
               <div className="flex gap-6 items-center">
                 <button
-                  onClick={() => handleLikeDislike(post._id)}
+                  onClick={handleLikeDislike}
                   className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
                     isLiked
                       ? "bg-blue-100 text-blue-600"
@@ -360,6 +395,19 @@ const Page = () => {
                 </p>
               </div>
               <div className="flex gap-1.5 text-xs items-center">
+                <Button
+                  onClick={toggleSavePost}
+                  loading={loading}
+                  className={`${
+                    savedPost
+                      ? "!bg-gray-300 !border-0 !rounded-full !h-6"
+                      : "bg-black !border-0 !rounded-full !h-6"
+                  }`}
+                >
+                  {savedPost ? "Saved" : "Save"}
+                </Button>
+
+                <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                 <p>{post.comments.length} Comments</p>
                 <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                 <p>{post.comments.length} Impressions</p>
@@ -368,6 +416,7 @@ const Page = () => {
           </div>
 
           {/* Comments Section */}
+          {/* ... (unchanged comments UI code) ... */}
           <div className="mt-8 bg-white rounded-md p-3">
             <div className="flex w-full items-center justify-between">
               <h1 className="font-semibold">Comments</h1>
@@ -569,12 +618,10 @@ const Page = () => {
         </div>
 
         {/* Right Column Placeholder */}
-        <div className="">
+        <div>
           <SimilarContent />
         </div>
       </div>
     </div>
   );
-};
-
-export default Page;
+}
