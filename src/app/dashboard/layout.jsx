@@ -19,7 +19,7 @@ import { useApp } from "../context/context";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname  } from "next/navigation";
 
 const { Header, Sider, Content } = Layout;
 
@@ -28,6 +28,7 @@ export default function DashboardLayout({ children }) {
     useApp();
   const [collapsed, setCollapsed] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -400,14 +401,33 @@ export default function DashboardLayout({ children }) {
             />
           </div>
           <div className="flex items-center gap-2.5">
-            <Button
-              className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
-              onClick={createPost}
-            >
-              <Image src="/images/add.png" width={20} height={20} alt="icon" />
-              New Post
-              {/* <Link href="/dashboard/newpost"></Link> */}
-            </Button>
+            {pathname === "/dashboard/communities" ? (
+              <Button
+                className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
+                onClick={createPost}
+              >
+                <Image
+                  src="/images/add.png"
+                  width={20}
+                  height={20}
+                  alt="icon"
+                />
+                Create a Community
+              </Button>
+            ) : (
+              <Button
+                className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
+                onClick={createPost}
+              >
+                <Image
+                  src="/images/add.png"
+                  width={20}
+                  height={20}
+                  alt="icon"
+                />
+                New Post
+              </Button>
+            )}
 
             {user ? null : (
               <Button

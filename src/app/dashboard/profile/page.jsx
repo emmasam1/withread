@@ -6,16 +6,18 @@ import Image from "next/image";
 import { Button } from "antd";
 import { motion } from "framer-motion";
 import UserPost from "../components/UserPost";
-import UserDraft from "../components/UserDraft"
+import UserDraft from "../components/UserDraft";
 import AnonymousPost from "../components/AnonymousPost";
 import SavedPost from "../components/SaveedPost";
+import { EditOutlined } from "@ant-design/icons";
+import { Tooltip } from "antd";
 
 const Page = () => {
   const { API_BASE_URL, setLoading, loading, user, token } = useApp();
   const [activeTab, setActiveTab] = useState("1");
 
   const tabs = [
-    { key: "1", label: "My Posts", content: <UserPost/> },
+    { key: "1", label: "My Posts", content: <UserPost /> },
     { key: "2", label: "Anonymous Posts", content: <AnonymousPost /> },
     { key: "3", label: "Saved Posts", content: <SavedPost /> },
     { key: "4", label: "Drafts", content: <UserDraft /> },
@@ -29,6 +31,11 @@ const Page = () => {
       {/* Banner */}
       <div className="rounded-tl-lg rounded-tr-lg">
         <div className="relative">
+          <Tooltip title="Change Banner" placement="topLeft">
+            <div className="rounded-full h-10 w-10 absolute bg-gray-50 right-5 top-3 flex justify-center items-center cursor-pointer">
+              <EditOutlined className="text-lg" />
+            </div>
+          </Tooltip>
           <Image
             src={user?.banner || "/images/banner.jpg"}
             alt="banner"
@@ -44,7 +51,7 @@ const Page = () => {
         <div className="flex">
           {/* Avatar and Name */}
           <div className="flex flex-col items-center">
-            <div className="h-[120px] w-[120px] rounded-full border-2 border-gray-200 overflow-hidden relative -top-10 -left-10">
+            <div className="h-[120px] w-[120px] rounded-full border-2 border-gray-200 overflow-hidden relative -top-10">
               <Image
                 src={user?.avatar || "/images/avatar.jpg"}
                 alt="user image"
@@ -52,7 +59,13 @@ const Page = () => {
                 height={500}
                 className="w-full h-full object-cover"
               />
+
+              {/* Always visible text overlay */}
+              <div className="absolute bottom-0 w-full bg-black/60 text-white text-xs text-center py-1 cursor-pointer">
+                Edit
+              </div>
             </div>
+
             <p className="mt-2 -left-3 !text-left text-2xl relative -top-10 font-bold">
               {user?.firstName} {user?.lastName}
             </p>
@@ -77,7 +90,9 @@ const Page = () => {
           </div>
         </div>
 
-        <p className="relative -top-8">{user?.bio}</p>
+        <div className="relative1">
+          <p className="relative -top-8">{user?.bio}</p>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -108,7 +123,9 @@ const Page = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="mx-auto w-9/10 mt-6">{tabs.find((tab) => tab.key === activeTab)?.content}</div>
+      <div className="mx-auto w-9/10 mt-6">
+        {tabs.find((tab) => tab.key === activeTab)?.content}
+      </div>
     </div>
   );
 };

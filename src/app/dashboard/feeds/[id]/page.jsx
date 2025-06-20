@@ -251,6 +251,12 @@ export default function Page() {
     }
   };
 
+  const handleEmojiClick = (emojiData) => {
+  const emoji = emojiData.emoji;
+  setCommentInput((prev) => prev + emoji);
+};
+
+
   /* ---------- early returns ---------- */
   if (error)
     return (

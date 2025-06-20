@@ -85,10 +85,14 @@ const UserDraft = () => {
     <PostGrid
       endpoint="/api/post/user/saved-post"
       emptyMessage="No drafted posts yet."
+      titleKey="title"
+      descriptionKey="content"
+      imageKey="images"
     />
   );
 };
 
 export default UserDraft;
+
 
 

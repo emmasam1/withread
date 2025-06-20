@@ -80,7 +80,7 @@ const Page = () => {
               {/* Post Input Box */}
               <div className="bg-white rounded-lg p-3 mb-6">
                 <div className="flex items-center gap-5">
-                  {user.avatar ? (
+                  {user?.avatar ? (
                     <Image
                       src={user?.avatar} // fallback in case avatar is null
                       alt="user image"
