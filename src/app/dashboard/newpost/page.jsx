@@ -9,6 +9,7 @@ import { Select, Upload, Input, Button } from "antd";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useSearchParams } from "next/navigation";
 
 const { Dragger } = Upload;
 const Editor = dynamic(
@@ -44,9 +45,16 @@ const Page = () => {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState("");
   const [collaborators, setCollaborators] = useState("");
-  const [status, setStatus] = useState("published");
   const [files, setFiles] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [editedPost, setEditedPost] = useState(null);
+
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+
+  useEffect(() => {
+    console.log("Post ID:", id);
+  }, [id]);
 
   const initials = `${user?.firstName?.[0] || ""}${
     user?.lastName?.[0] || ""
@@ -57,18 +65,29 @@ const Page = () => {
     { key: "2", label: "Anonymous Post" },
   ];
 
-  const draggerProps = {
-    name: "file",
-    multiple: true,
-    beforeUpload: (file) => {
-      setFiles((prev) => [...prev, file]);
-      return false;
-    },
-    onRemove: (file) => {
-      setFiles((prev) => prev.filter((f) => f.uid !== file.uid));
-    },
-    fileList: files,
-  };
+ const draggerProps = {
+  name: "file",
+  multiple: true,
+  beforeUpload: (file) => {
+    // Only allow image preview
+    const preview = {
+      uid: file.uid,
+      name: file.name,
+      status: "done",
+      url: URL.createObjectURL(file), // Preview for local file
+      originFileObj: file, // Needed for submission
+    };
+
+    setFiles((prev) => [...prev, preview]);
+    return false; // Prevent auto-upload
+  },
+  onRemove: (file) => {
+    setFiles((prev) => prev.filter((f) => f.uid !== file.uid));
+  },
+  fileList: files,
+  listType: "picture", // Optional: shows thumbnails
+};
+
 
   const getCategories = async () => {
     const url = `${API_BASE_URL}/api/interest/interests`;
@@ -87,6 +106,53 @@ const Page = () => {
   const handleChange = (value) => {
     setSelectedCategoryId(value);
   };
+
+
+  useEffect(() => {
+  if (!id) return;
+
+  const fetchDraft = async () => {
+    try {
+      const url = `${API_BASE_URL}/api/post/${id}`;
+      const { data } = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (data.success) {
+        setEditedPost(data.post);           // ✅ save the post object
+      } else {
+        toast.error("Draft not found");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error loading draft");
+    }
+  };
+
+  fetchDraft();
+}, [id, API_BASE_URL, token]);
+
+
+useEffect(() => {
+  if (!editedPost) return;
+
+  setTitle(editedPost.title || "");
+  setContent(editedPost.content || "");
+  setLink(editedPost.links?.[0] || "");
+  setSelectedCategoryId(editedPost.categories?.[0]?._id || "");
+  setTags((editedPost.tags || []).join(", "));
+  setFiles(
+    (editedPost.images || []).map((url, idx) => ({
+      uid: `existing-${idx}`,
+      name: `image-${idx}`,
+      status: "done",
+      url,                          
+    }))
+  );
+  // activeTab: 1 = open, 2 = anonymous
+  setActiveTab(editedPost.isAnonymous ? "2" : "1");
+}, [editedPost]);
+
 
   const addPost = async () => {
     if (!title || !content) {
@@ -378,7 +444,8 @@ const Page = () => {
             onClick={addPost}
             loading={loading}
           >
-            Post Now
+            
+            {editedPost ? `Editing post` : "Post now"}
           </Button>
         </div>
       </div>

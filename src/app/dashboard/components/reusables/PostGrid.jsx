@@ -13,13 +13,14 @@ const PostGrid = ({
   endpoint,
   descriptionKey = "content",
   imageKey = "images",
-  avatarKey = "avatar",
-  bannerKey = "banner",
   emptyMessage = "No posts found.",
 }) => {
   const { API_BASE_URL, setLoading, loading, token } = useApp();
   const [data, setData] = useState([]);
   const [dataType, setDataType] = useState("");
+  const [publishing, setPublishing] = useState({});
+  const [editing, setEditing] = useState({});
+
   const router = useRouter();
 
   const isDraftMode = endpoint === "/api/api/post/user/drafts";
@@ -33,7 +34,7 @@ const PostGrid = ({
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // console.log(res.data);
+        console.log(res.data);
 
         if (res.data.success) {
           let content = [];
@@ -64,6 +65,50 @@ const PostGrid = ({
 
     fetchPosts();
   }, [API_BASE_URL, token, endpoint]);
+
+  const publishPost = async (id) => {
+    const url = `${API_BASE_URL}/api/post/drafts/${id}/publish`;
+
+    // Set only this ID to true
+    setPublishing((prev) => ({ ...prev, [id]: true }));
+
+    try {
+      const res = await axios.patch(
+        url,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        toast.success(res.data.message || "Draft published!");
+
+        // Remove published item from list
+        setData((prev) => prev.filter((item) => item._id !== id));
+      } else {
+        toast.error(res.data.message || "Publish failed");
+      }
+    } catch (err) {
+      console.error("Publish error:", err);
+      toast.error("Error publishing draft");
+    } finally {
+      // Turn off loading for this ID
+      setPublishing((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const editPost = (id) => {
+  setEditing((prev) => ({ ...prev, [id]: true }));
+  try {
+    router.push(`/dashboard/newpost?id=${id}`);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setTimeout(() => {
+      setEditing((prev) => ({ ...prev, [id]: false }));
+    }, 1000);
+  }
+};
+
 
   const handleCardClick = (post) => {
     if (isDraftMode && post?._id) {
@@ -130,10 +175,22 @@ const PostGrid = ({
             )}
             {dataType?.toLowerCase() === "drafts" && (
               <div className="mt-4 flex justify-end gap-2">
-                <Button type="primary" size="small" className="!bg-black !text-[#D9D9D9]">
+                <Button
+                  type="primary"
+                  size="small"
+                  className="!bg-black !text-[#D9D9D9]"
+                  onClick={() => publishPost(item._id)}
+                  loading={publishing[item._id]}
+                >
                   Publish
                 </Button>
-                <Button size="small">Edit</Button>
+                <Button
+                  size="small"
+                  onClick={() => editPost(item._id)}
+                  loading={editing[item._id]}
+                >
+                  Edit
+                </Button>
               </div>
             )}
           </Card>
