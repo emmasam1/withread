@@ -48,10 +48,10 @@ const Page = () => {
   }`.toUpperCase();
 
   return (
-    <div className="grid grid-cols-[2fr_450px] h-screen ">
+    <div className="grid grid-cols-[2fr_400px] h-screen gap-7">
       {/* Left Column */}
       <div className="rounded-lg p-4 grid grid-cols">
-        <div className="w-[96%] -mt-4">
+        <div className="w-full -mt-4">
           {user && (
             <>
               {/* Tab Header */}
@@ -147,7 +147,7 @@ const Page = () => {
       </div>
 
       {/* Right Column */}
-      <div className="overflow-auto fixed right-10 w-[450px] h-screen pb-23.5">
+      <div className="overflow-auto fixed right-10 w-[400px] h-screen pb-23.5">
         <TopCreators />
         <TrendingContents />
       </div>

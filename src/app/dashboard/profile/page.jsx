@@ -11,6 +11,7 @@ import AnonymousPost from "../components/AnonymousPost";
 import SavedPost from "../components/SaveedPost";
 import { EditOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
+import Communities from "../components/Communities";
 
 const Page = () => {
   const { API_BASE_URL, setLoading, loading, user, token } = useApp();
@@ -21,7 +22,7 @@ const Page = () => {
     { key: "2", label: "Anonymous Posts", content: <AnonymousPost /> },
     { key: "3", label: "Saved Posts", content: <SavedPost /> },
     { key: "4", label: "Drafts", content: <UserDraft /> },
-    { key: "5", label: "My Communities" },
+    { key: "5", label: "My Communities", content: <Communities /> },
   ];
 
   const activeIndex = tabs.findIndex((tab) => tab.key === activeTab);

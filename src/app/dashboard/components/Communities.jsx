@@ -1,9 +1,16 @@
-import React from 'react'
+"use client";
+import PostGrid from "./reusables/PostGrid";
 
 const Communities = () => {
   return (
-    <div>Communities</div>
-  )
-}
+    <PostGrid
+      endpoint="/api/community/my-community"
+      // titleKey="name"
+    //   descriptionKey="about"
+      imageKey="banner"
+      emptyMessage="No community yet."
+    />
+  );
+};
 
-export default Communities
+export default Communities;

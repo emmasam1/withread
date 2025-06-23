@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useApp } from "../../../context/context";
-import { Card } from "antd";
+import { Card, Button } from "antd";
 import axios from "axios";
 import { toast } from "react-toastify";
 import WithReadLoader from "../WithReadLoader";
@@ -11,16 +11,18 @@ const { Meta } = Card;
 
 const PostGrid = ({
   endpoint,
-  titleKey = "title",
   descriptionKey = "content",
   imageKey = "images",
+  avatarKey = "avatar",
+  bannerKey = "banner",
   emptyMessage = "No posts found.",
 }) => {
   const { API_BASE_URL, setLoading, loading, token } = useApp();
   const [data, setData] = useState([]);
+  const [dataType, setDataType] = useState("");
   const router = useRouter();
 
-  const isDraftMode = endpoint === "/api/post/user/saved-post";
+  const isDraftMode = endpoint === "/api/api/post/user/drafts";
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -31,10 +33,24 @@ const PostGrid = ({
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        // console.log(res.data);
+
         if (res.data.success) {
-          setData(
-            res.data.posts || res.data.drafts || res.data.savedPosts || []
-          );
+          let content = [];
+          if (res.data.posts) {
+            content = res.data.posts;
+            setDataType("posts");
+          } else if (res.data.drafts) {
+            content = res.data.drafts;
+            setDataType("drafts");
+          } else if (res.data.savedPosts) {
+            content = res.data.savedPosts;
+            setDataType("savedPosts");
+          } else if (res.data.communities) {
+            content = res.data.communities;
+            setDataType("communities");
+          }
+          setData(content);
         } else {
           toast.error("Failed to fetch posts");
         }
@@ -48,7 +64,7 @@ const PostGrid = ({
 
     fetchPosts();
   }, [API_BASE_URL, token, endpoint]);
-  
+
   const handleCardClick = (post) => {
     if (isDraftMode && post?._id) {
       localStorage.setItem("selectedDraft", JSON.stringify(post));
@@ -81,13 +97,45 @@ const PostGrid = ({
               />
             }
           >
-            <Meta
-              title={item[titleKey] || "Untitled Post"}
-              description={
-                item[descriptionKey]?.slice(0, 100) ||
-                "No description available."
-              }
-            />
+            {dataType === "communities" ? (
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  {item.avatar ? (
+                    <img
+                      src={item.avatar}
+                      alt="community avatar"
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white font-medium text-sm">
+                      {item.name?.slice(0, 2).toUpperCase() || "UN"}
+                    </div>
+                  )}
+                  <span className="font-semibold text-sm">{item.name}</span>
+                </div>
+                <p className="text-xs text-gray-600">
+                  {item.creator ? "Admin" : "Joined"}{" "}
+                  {new Date(item.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            ) : (
+              <Meta
+                title={item.title || "Untitled"}
+                {...(dataType !== "communities" && {
+                  description:
+                    item[descriptionKey]?.slice(0, 100) ||
+                    "No description available",
+                })}
+              />
+            )}
+            {dataType?.toLowerCase() === "drafts" && (
+              <div className="mt-4 flex justify-end gap-2">
+                <Button type="primary" size="small" className="!bg-black !text-[#D9D9D9]">
+                  Publish
+                </Button>
+                <Button size="small">Edit</Button>
+              </div>
+            )}
           </Card>
         ))
       ) : (

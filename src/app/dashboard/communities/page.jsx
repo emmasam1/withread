@@ -2,21 +2,29 @@
 import { Button, Input, Divider } from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import { useApp } from "../../context/context";
+import { motion } from "framer-motion";
 
 const page = () => {
   const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
+  const [activeTab, setActiveTab] = useState("1");
 
   const initials = `${user?.firstName?.[0] || ""}${
     user?.lastName?.[0] || ""
   }`.toUpperCase();
 
+  const tabs = [
+    { key: "1", label: "All Posts" },
+    { key: "2", label: "Members" },
+    { key: "3", label: "About" },
+  ];
+
   return (
     <div className="p-3">
-      <div className="grid grid-cols-[2fr_450px] ">
+      <div className="grid grid-cols-[2fr_400px] gap-9">
         <div className="rounded-lg grid grid-cols">
-          <div className="bg-white p-3 rounded-md">
+          <div className="bg-white p-3 rounded-md w-full">
             <div className="h-70 relative">
               <Image
                 src="/images/community.png"
@@ -66,6 +74,7 @@ const page = () => {
                     />
                   </div>
                 </div>
+
                 <div className="gap-3 w-75 flex justify-between mt-4">
                   <div className="flex">
                     <Image
@@ -103,7 +112,28 @@ const page = () => {
               </div>
             </div>
 
-            <div className="mt-3 rounded-lg p-3 mb-6">
+            <div className="rounded-lg p-3 my-6">
+              <div className="relative flex bg-gray-100 rounded-full p-1 mb-4">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    className={`flex-1 text-sm z-10 py-2 font-medium transition-colors ${
+                      activeTab === tab.key ? "text-black" : "text-gray-400"
+                    }`}
+                    onClick={() => setActiveTab(tab.key)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+                <motion.div
+                  layout
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="absolute top-0 h-full bg-white rounded-full shadow w-1/3 z-0"
+                  style={{
+                    left: `${(parseInt(activeTab) - 1) * 33.333}%`,
+                  }}
+                />
+              </div>
               <div className="flex items-center gap-5">
                 {user?.avatar ? (
                   <Image
@@ -162,8 +192,13 @@ const page = () => {
               </div>
             </div>
           </div>
+          
+          {/* content */}
+          <div className="mt-5 p-3 bg-white rounded-md">ff</div>
         </div>
-        <div className="overflow-auto fixed right-10 w-[450px] h-screen pb-23.5"></div>
+        <div className="overflow-auto fixed right-10 w-[400px] h-screen pb-23.5 bg-red-600">
+          j
+        </div>
       </div>
     </div>
   );
