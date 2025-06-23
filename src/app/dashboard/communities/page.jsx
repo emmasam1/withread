@@ -5,10 +5,12 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useApp } from "../../context/context";
 import { motion } from "framer-motion";
+import MyCommunity from "../components/MyCommunity";
 
 const page = () => {
   const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
   const [activeTab, setActiveTab] = useState("1");
+  const [selectedCommunity, setSelectedCommunity] = useState(null);
 
   const initials = `${user?.firstName?.[0] || ""}${
     user?.lastName?.[0] || ""
@@ -27,26 +29,26 @@ const page = () => {
           <div className="bg-white p-3 rounded-md w-full">
             <div className="h-70 relative">
               <Image
-                src="/images/community.png"
+                src={selectedCommunity?.banner}
                 alt="image"
                 width={1000}
                 height={500}
                 className="w-full h-full object-cover rounded-md"
               />
 
-              <div className="absolute bg-red-400 h-25 w-25 rounded-full left-5 -bottom-12">
+              <div className="absolute h-25 w-25 rounded-full left-5 -bottom-12">
                 <Image
-                  src="/images/roundImg.png"
+                  src={selectedCommunity?.avatar}
                   alt="image"
                   width={1000}
                   height={500}
-                  className="w-full h-full object-cover rounded-md"
+                  className="w-full h-full object-cover rounded-full"
                 />
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="mt-15 ml-4">
-                <h2 className="font-semibold">UI/UX Design Community</h2>
+                <h2 className="font-semibold">{selectedCommunity?.name}</h2>
                 <p className="mt-2 text-sm">Public Community • 20.5K Members</p>
               </div>
               <div>
@@ -192,12 +194,27 @@ const page = () => {
               </div>
             </div>
           </div>
-          
+
           {/* content */}
           <div className="mt-5 p-3 bg-white rounded-md">ff</div>
         </div>
-        <div className="overflow-auto fixed right-10 w-[400px] h-screen pb-23.5 bg-red-600">
-          j
+        <div className="overflow-auto fixed right-10 w-[400px] h-screen pb-23.5 bg-white p-3 rounded-tr-md rounded-tl-md">
+          <Input
+            placeholder="Search anything..."
+            className="mt-4 !rounded-full !bg-[#F6F6F6] !border-none"
+            prefix={
+              <Image
+                src="/images/search-normal.png"
+                alt="search icon"
+                width={20}
+                height={20}
+              />
+            }
+          />
+          <MyCommunity
+            selectedCommunityId={selectedCommunity?._id}
+            setSelectedCommunity={setSelectedCommunity}
+          />
         </div>
       </div>
     </div>
