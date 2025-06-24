@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useApp } from "../../context/context";
 import dynamic from "next/dynamic";
 import { Select, Upload, Input, Button } from "antd";
@@ -24,6 +24,19 @@ const stripHtml = (html) => {
   const tmp = document.createElement("DIV");
   tmp.innerHTML = html;
   return tmp.textContent || tmp.innerText || "";
+};
+
+const DraftIdLoader = ({ onLoad }) => {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+
+  useEffect(() => {
+    if (id) {
+      onLoad(id);
+    }
+  }, [id]);
+
+  return null;
 };
 
 const Page = () => {
@@ -48,6 +61,7 @@ const Page = () => {
   const [files, setFiles] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [editedPost, setEditedPost] = useState(null);
+  const [editedPostId, setEditedPostId] = useState(null);
 
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -107,30 +121,54 @@ const Page = () => {
     setSelectedCategoryId(value);
   };
 
+   useEffect(() => {
+    if (!editedPostId) return;
 
-  useEffect(() => {
-  if (!id) return;
+    const fetchDraft = async () => {
+      try {
+        const url = `${API_BASE_URL}/api/post/${editedPostId}`;
+        const { data } = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-  const fetchDraft = async () => {
-    try {
-      const url = `${API_BASE_URL}/api/post/${id}`;
-      const { data } = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (data.success) {
-        setEditedPost(data.post);           // ✅ save the post object
-      } else {
-        toast.error("Draft not found");
+        if (data.success) {
+          setEditedPost(data.post);
+        } else {
+          toast.error("Draft not found");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Error loading draft");
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error loading draft");
-    }
-  };
+    };
 
-  fetchDraft();
-}, [id, API_BASE_URL, token]);
+    fetchDraft();
+  }, [editedPostId, API_BASE_URL, token]);
+
+
+//   useEffect(() => {
+//   if (!id) return;
+
+//   const fetchDraft = async () => {
+//     try {
+//       const url = `${API_BASE_URL}/api/post/${id}`;
+//       const { data } = await axios.get(url, {
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+
+//       if (data.success) {
+//         setEditedPost(data.post);           // ✅ save the post object
+//       } else {
+//         toast.error("Draft not found");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       toast.error("Error loading draft");
+//     }
+//   };
+
+//   fetchDraft();
+// }, [id, API_BASE_URL, token]);
 
 
 useEffect(() => {
@@ -289,6 +327,9 @@ useEffect(() => {
 
   return (
     <div className="p-4">
+      <Suspense fallback={null}>
+        <DraftIdLoader onLoad={setEditedPostId} />
+      </Suspense>
       <Link href="/dashboard" className="flex items-center gap-1.5 mb-3">
         <Image src="/images/arrow-left.png" alt="icon" width={20} height={15} />
         <p className="text-black text-sm">Main Feed</p>
