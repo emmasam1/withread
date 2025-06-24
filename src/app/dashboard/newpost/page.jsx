@@ -12,20 +12,18 @@ import { toast } from "react-toastify";
 import { useSearchParams } from "next/navigation";
 
 const { Dragger } = Upload;
-const Editor = dynamic(
-  () => import("primereact/editor").then((mod) => mod.Editor),
-  {
-    ssr: false,
-  }
-);
+const Editor = dynamic(() => import("primereact/editor").then((mod) => mod.Editor), {
+  ssr: false,
+});
 
-// Utility to strip HTML tags
+// Strip HTML tags
 const stripHtml = (html) => {
   const tmp = document.createElement("DIV");
   tmp.innerHTML = html;
   return tmp.textContent || tmp.innerText || "";
 };
 
+// Inline DraftIdLoader component using useSearchParams safely
 const DraftIdLoader = ({ onLoad }) => {
   const searchParams = useSearchParams();
   const id = searchParams.get("id");
@@ -49,8 +47,8 @@ const Page = () => {
     draftLoading,
     setDraftLoading,
   } = useApp();
-  const [activeTab, setActiveTab] = useState("1");
 
+  const [activeTab, setActiveTab] = useState("1");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [link, setLink] = useState("");
@@ -63,50 +61,36 @@ const Page = () => {
   const [editedPost, setEditedPost] = useState(null);
   const [editedPostId, setEditedPostId] = useState(null);
 
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id");
-
-  useEffect(() => {
-    console.log("Post ID:", id);
-  }, [id]);
-
-  const initials = `${user?.firstName?.[0] || ""}${
-    user?.lastName?.[0] || ""
-  }`.toUpperCase();
-
+  const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase();
   const tabs = [
     { key: "1", label: "Open Post" },
     { key: "2", label: "Anonymous Post" },
   ];
 
- const draggerProps = {
-  name: "file",
-  multiple: true,
-  beforeUpload: (file) => {
-    // Only allow image preview
-    const preview = {
-      uid: file.uid,
-      name: file.name,
-      status: "done",
-      url: URL.createObjectURL(file), // Preview for local file
-      originFileObj: file, // Needed for submission
-    };
-
-    setFiles((prev) => [...prev, preview]);
-    return false; // Prevent auto-upload
-  },
-  onRemove: (file) => {
-    setFiles((prev) => prev.filter((f) => f.uid !== file.uid));
-  },
-  fileList: files,
-  listType: "picture", // Optional: shows thumbnails
-};
-
+  const draggerProps = {
+    name: "file",
+    multiple: true,
+    beforeUpload: (file) => {
+      const preview = {
+        uid: file.uid,
+        name: file.name,
+        status: "done",
+        url: URL.createObjectURL(file),
+        originFileObj: file,
+      };
+      setFiles((prev) => [...prev, preview]);
+      return false;
+    },
+    onRemove: (file) => {
+      setFiles((prev) => prev.filter((f) => f.uid !== file.uid));
+    },
+    fileList: files,
+    listType: "picture",
+  };
 
   const getCategories = async () => {
-    const url = `${API_BASE_URL}/api/interest/interests`;
     try {
-      const res = await axios.get(url);
+      const res = await axios.get(`${API_BASE_URL}/api/interest/interests`);
       setCategories(res.data.categories);
     } catch (error) {
       console.log(error);
@@ -117,11 +101,7 @@ const Page = () => {
     getCategories();
   }, []);
 
-  const handleChange = (value) => {
-    setSelectedCategoryId(value);
-  };
-
-   useEffect(() => {
+  useEffect(() => {
     if (!editedPostId) return;
 
     const fetchDraft = async () => {
@@ -130,7 +110,6 @@ const Page = () => {
         const { data } = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (data.success) {
           setEditedPost(data.post);
         } else {
@@ -143,68 +122,36 @@ const Page = () => {
     };
 
     fetchDraft();
-  }, [editedPostId, API_BASE_URL, token]);
+  }, [editedPostId]);
 
+  useEffect(() => {
+    if (!editedPost) return;
 
-//   useEffect(() => {
-//   if (!id) return;
+    setTitle(editedPost.title || "");
+    setContent(editedPost.content || "");
+    setLink(editedPost.links?.[0] || "");
+    setSelectedCategoryId(editedPost.categories?.[0]?._id || "");
+    setTags((editedPost.tags || []).join(", "));
+    setFiles(
+      (editedPost.images || []).map((url, idx) => ({
+        uid: `existing-${idx}`,
+        name: `image-${idx}`,
+        status: "done",
+        url,
+      }))
+    );
+    setActiveTab(editedPost.isAnonymous ? "2" : "1");
+  }, [editedPost]);
 
-//   const fetchDraft = async () => {
-//     try {
-//       const url = `${API_BASE_URL}/api/post/${id}`;
-//       const { data } = await axios.get(url, {
-//         headers: { Authorization: `Bearer ${token}` }
-//       });
-
-//       if (data.success) {
-//         setEditedPost(data.post);           // ✅ save the post object
-//       } else {
-//         toast.error("Draft not found");
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       toast.error("Error loading draft");
-//     }
-//   };
-
-//   fetchDraft();
-// }, [id, API_BASE_URL, token]);
-
-
-useEffect(() => {
-  if (!editedPost) return;
-
-  setTitle(editedPost.title || "");
-  setContent(editedPost.content || "");
-  setLink(editedPost.links?.[0] || "");
-  setSelectedCategoryId(editedPost.categories?.[0]?._id || "");
-  setTags((editedPost.tags || []).join(", "));
-  setFiles(
-    (editedPost.images || []).map((url, idx) => ({
-      uid: `existing-${idx}`,
-      name: `image-${idx}`,
-      status: "done",
-      url,                          
-    }))
-  );
-  // activeTab: 1 = open, 2 = anonymous
-  setActiveTab(editedPost.isAnonymous ? "2" : "1");
-}, [editedPost]);
-
+  const handleChange = (value) => {
+    setSelectedCategoryId(value);
+  };
 
   const addPost = async () => {
-    if (!title || !content) {
-      toast.warning("Title and content are required.");
-      return;
-    }
-
-    if (!selectedCategoryId || selectedCategoryId === "") {
-      toast.warning("Select a category.");
-      return;
-    }
+    if (!title || !content) return toast.warning("Title and content are required.");
+    if (!selectedCategoryId) return toast.warning("Select a category.");
 
     setLoading(true);
-
     const formData = new FormData();
     formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
     formData.append("title", stripHtml(title));
@@ -214,116 +161,152 @@ useEffect(() => {
     formData.append("categories", JSON.stringify([selectedCategoryId]));
     formData.append("tags", tags);
     formData.append("collaborators", collaborators);
-
-    files.forEach((file) => {
-      formData.append("images", file);
-    });
-
-    // Debug log
-    for (let pair of formData.entries()) {
-      console.log(`${pair[0]}:`, pair[1]);
-    }
+    files.forEach((file) => formData.append("images", file));
 
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/post/post-feed`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      console.log("Success response:", res.data);
+      const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+      });
       toast.success("Post submitted successfully!");
-
-      // Reset form
-      setTitle("");
-      setContent("");
-      setLink("");
-      setEmojis("");
-      setSelectedCategoryId("");
-      setTags("");
-      setCollaborators("");
-      setFiles([]);
+      setTitle(""); setContent(""); setLink(""); setEmojis("");
+      setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
     } catch (error) {
-      console.error(
-        "Post submission failed:",
-        error.response?.data || error.message
-      );
       toast.error("Something went wrong while submitting the post.");
     } finally {
       setLoading(false);
     }
   };
 
-  const saveToDraft = async () => {
-    if (!title || !content) {
-      toast.warning("Title and content are required.");
-      return;
+  const saveEditedPostToDraft = async () => {
+  if (!title || !content) return toast.warning("Title and content are required.");
+  if (!selectedCategoryId) return toast.warning("Select a category.");
+
+  setDraftLoading(true);
+  const formData = new FormData();
+
+  formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+  formData.append("status", "draft");
+  formData.append("title", stripHtml(title));
+  formData.append("content", stripHtml(content));
+  formData.append("link", link);
+  formData.append("emojis", emojis);
+  formData.append("categories", JSON.stringify([selectedCategoryId]));
+  formData.append("tags", tags);
+  formData.append("collaborators", collaborators);
+
+  // Separate existing and new images
+  const existingImageUrls = [];
+  files.forEach((file) => {
+    if (file.originFileObj) {
+      formData.append("images", file.originFileObj);
+    } else if (file.url) {
+      existingImageUrls.push(file.url);
     }
+  });
 
-    if (!selectedCategoryId) {
-      toast.warning("Select a category.");
-      return;
-    }
+  formData.append("existingImages", JSON.stringify(existingImageUrls));
 
-    setDraftLoading(true);
-
-    const formData = new FormData();
-    formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
-    formData.append("status", "draft");
-    formData.append("title", stripHtml(title));
-    formData.append("content", stripHtml(content));
-    formData.append("link", link);
-    formData.append("emojis", emojis);
-    formData.append("categories", JSON.stringify([selectedCategoryId]));
-    formData.append("tags", tags);
-    formData.append("collaborators", collaborators);
-
-    files.forEach((file) => {
-      formData.append("images", file);
+  try {
+    const res = await axios.patch(`${API_BASE_URL}/api/post/drafts/${editedPostId}`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
     });
 
-    // Debug log
-    for (let pair of formData.entries()) {
-      console.log(`${pair[0]}:`, pair[1]);
-    }
+    toast.success(res.data.message || "Draft updated successfully!");
+     setTitle(""); setContent(""); setLink(""); setEmojis("");
+      setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
+  } catch (error) {
+    toast.error("Failed to update draft.");
+    console.error(error);
+  } finally {
+    setDraftLoading(false);
+  }
+};
 
-    try {
-      const res = await axios.post(
-        `${API_BASE_URL}/api/post/post-feed`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      console.log("Success response:", res.data);
-      toast.success(res.data.message || "Post saved to draft successfully!");
 
-      // Reset form
-      setTitle("");
-      setContent("");
-      setLink("");
-      setEmojis("");
-      setSelectedCategoryId("");
-      setTags("");
-      setCollaborators("");
-      setFiles([]);
-    } catch (error) {
-      console.error(
-        "Post submission failed:",
-        error.response?.data || error.message
-      );
-      toast.error("Something went wrong while submitting the post.");
-    } finally {
-      setDraftLoading(false);
+  const saveToDraft = async () => {
+  if (!title || !content) return toast.warning("Title and content are required.");
+  if (!selectedCategoryId) return toast.warning("Select a category.");
+
+  setDraftLoading(true);
+  const formData = new FormData();
+
+  // Add text fields
+  formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+  formData.append("status", "draft");
+  formData.append("title", stripHtml(title));
+  formData.append("content", stripHtml(content));
+  formData.append("link", link);
+  formData.append("emojis", emojis);
+  formData.append("categories", JSON.stringify([selectedCategoryId]));
+  formData.append("tags", tags);
+  formData.append("collaborators", collaborators);
+
+  // Separate existing and new images
+  const existingImageUrls = [];
+  files.forEach((file) => {
+    if (file.originFileObj) {
+      // New file selected by user
+      formData.append("images", file.originFileObj);
+    } else if (file.url) {
+      // Existing image from server
+      existingImageUrls.push(file.url);
     }
-  };
+  });
+
+  // Append existing image URLs as JSON
+  formData.append("existingImages", JSON.stringify(existingImageUrls));
+
+  try {
+    const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    toast.success(res.data.message || "Post saved to draft successfully!");
+    setTitle(""); setContent(""); setLink(""); setEmojis("");
+    setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
+  } catch (error) {
+    toast.error("Something went wrong while saving the draft.");
+  } finally {
+    setDraftLoading(false);
+  }
+};
+
+
+  // const saveToDraft = async () => {
+  //   if (!title || !content) return toast.warning("Title and content are required.");
+  //   if (!selectedCategoryId) return toast.warning("Select a category.");
+
+  //   setDraftLoading(true);
+  //   const formData = new FormData();
+  //   formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+  //   formData.append("status", "draft");
+  //   formData.append("title", stripHtml(title));
+  //   formData.append("content", stripHtml(content));
+  //   formData.append("link", link);
+  //   formData.append("emojis", emojis);
+  //   formData.append("categories", JSON.stringify([selectedCategoryId]));
+  //   formData.append("tags", tags);
+  //   formData.append("collaborators", collaborators);
+  //   files.forEach((file) => formData.append("images", file));
+
+  //   try {
+  //     const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
+  //       headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+  //     });
+  //     toast.success(res.data.message || "Post saved to draft successfully!");
+  //     setTitle(""); setContent(""); setLink(""); setEmojis("");
+  //     setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
+  //   } catch (error) {
+  //     toast.error("Something went wrong while saving the draft.");
+  //   } finally {
+  //     setDraftLoading(false);
+  //   }
+  // };
 
   return (
     <div className="p-4">
@@ -473,20 +456,27 @@ useEffect(() => {
 
         {/* Buttons */}
         <div className="flex justify-end my-4 gap-2">
-          <Button
+          {editedPostId ? <Button
+            onClick={saveEditedPostToDraft}
+            loading={draftLoading}
+            className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8"
+          >
+            Save to Drafts
+          </Button> : <Button
             onClick={saveToDraft}
             loading={draftLoading}
             className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8"
           >
             Save to Drafts
-          </Button>
+          </Button>}
+          
           <Button
             className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8"
             onClick={addPost}
             loading={loading}
           >
             
-            {editedPost ? `Editing post` : "Post now"}
+            Post now
           </Button>
         </div>
       </div>

@@ -7,30 +7,68 @@ import Image from "next/image";
 import { toast } from "react-toastify";
 
 const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
-  const { API_BASE_URL, setLoading, loading, token } = useApp();
+  const { API_BASE_URL, setLoading, token } = useApp();
   const [communities, setCommunities] = useState([]);
+
+  const fetchUserProfiles = async (communityId, memberIds) => {
+    try {
+      console.log("Fetching profiles for:", communityId, memberIds);
+      const res = await axios.get(
+        `${API_BASE_URL}/api/community/${communityId}/members`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Fetched memberProfiles:", res.data.members);
+      return res.data.members;
+    } catch (err) {
+      console.error("Error fetching user profiles:", err);
+      return [];
+    }
+  };
+
+  const handleCommunityClick = async (community) => {
+    try {
+      const memberProfiles = await fetchUserProfiles(
+        community._id,
+        community.members.slice(0, 3)
+      );
+      const updatedCommunity = { ...community, memberProfiles };
+      console.log("Updated selectedCommunity:", updatedCommunity);
+      setSelectedCommunity(updatedCommunity);
+    } catch (err) {
+      toast.error("Failed to load members");
+    }
+  };
 
   useEffect(() => {
     const fetchCommunities = async () => {
       if (!API_BASE_URL || !token) return;
       try {
         setLoading(true);
-        const res = await axios.get(
-          `${API_BASE_URL}/api/community/my-community`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
-        console.log(res.data)
+        const res = await axios.get(`${API_BASE_URL}/api/community/my-community`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (res.data.success) {
-          const communityList = res.data.communities.slice(0, 4);
-          setCommunities(communityList);
+          const communityList = res.data.communities;
 
-          // set first as default if not already set
-          if (!selectedCommunityId && communityList.length > 0) {
-            setSelectedCommunity(communityList[0]);
+          const enrichedCommunities = await Promise.all(
+            communityList.map(async (community) => {
+              const memberProfiles = await fetchUserProfiles(
+                community._id,
+                community.members.slice(0, 3)
+              );
+              return { ...community, memberProfiles };
+            })
+          );
+
+          setCommunities(enrichedCommunities);
+
+          if (!selectedCommunityId && enrichedCommunities.length > 0) {
+            setSelectedCommunity(enrichedCommunities[0]);
           }
         } else {
           toast.error("Failed to fetch communities");
@@ -55,24 +93,54 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
           return (
             <div
               key={community._id}
-              onClick={() => setSelectedCommunity(community)}
-              className={`flex justify-between items-center cursor-pointer py-1 px-2 rounded-md ${
+              onClick={() => handleCommunityClick(community)}
+              className={`flex flex-col cursor-pointer p-3 rounded-md ${
                 isActive ? "bg-[#F5F4FF]" : "hover:bg-[#F6F6F6]"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Image
-                  src={community.avatar || "/images/placeholder.jpg"}
-                  alt={`${community.name} avatar`}
-                  width={45}
-                  height={45}
-                  className="rounded-full object-cover h-10 w-10"
-                />
-                <h2>{community.name}</h2>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={community.avatar || "/images/placeholder.jpg"}
+                    alt={`${community.name} avatar`}
+                    width={45}
+                    height={45}
+                    className="rounded-full object-cover h-10 w-10"
+                  />
+                  <h2>{community.name}</h2>
+                </div>
+                <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
+                  {community.members.length}
+                </div>
               </div>
-              <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
-                4
-              </div>
+
+              {/* {community.memberProfiles?.length > 0 && (
+                <div className="flex justify-between items-center mt-3">
+                  <div className="flex">
+                    {community.memberProfiles.slice(0, 3).map((member, index) => (
+                      <Image
+                        key={member._id}
+                        src={member.avatar || "/images/placeholder.jpg"}
+                        alt={member.username}
+                        width={40}
+                        height={40}
+                        className={`rounded-full object-cover ${index > 0 ? "-ml-5" : ""}`}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="w-[200px] text-sm">
+                    {community.memberProfiles
+                      .slice(0, 3)
+                      .map((m) => m.username)
+                      .join(", ")}
+                    {community.members.length > 3 && (
+                      <> and {community.members.length - 3} others</>
+                    )}{" "}
+                    are members
+                  </div>
+                </div>
+              )} */}
             </div>
           );
         })}
