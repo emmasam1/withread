@@ -3,7 +3,7 @@
 import { Button, Input, Divider } from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useApp } from "../../context/context";
 import { motion } from "framer-motion";
 import MyCommunity from "../components/MyCommunity";
@@ -14,33 +14,34 @@ const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
   const [selectedCommunity, setSelectedCommunity] = useState(null);
 
-  const initials = `${user?.firstName?.[0] || ""}${
-    user?.lastName?.[0] || ""
-  }`.toUpperCase();
+  const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase();
 
-
-  
   const tabs = [
     { key: "1", label: "All Posts" },
     { key: "2", label: "Members" },
     { key: "3", label: "About" },
   ];
 
-   const shouldShowAllCommunities =
-    !user || !Array.isArray(user.communities) || user.communities.length === 0;
-  
+  const hasSetDefault = useRef(false);
+
+  // ✅ Only set selectedCommunity once if user has communities
   useEffect(() => {
     if (
       user &&
       Array.isArray(user.communities) &&
       user.communities.length > 0 &&
-      !selectedCommunity
-  ) {
-    setSelectedCommunity(user.communities[0]); // ✅ set only once
-  }
-}, [user, selectedCommunity]);
+      !hasSetDefault.current
+    ) {
+      hasSetDefault.current = true;
+      // Set placeholder with just ID; MyCommunity will fetch full details
+      setSelectedCommunity({ _id: user.communities[0] });
+    }
+  }, [user]);
 
-if (loading) return null;
+  // ✅ Fix logic: if no community is selected, show AllCommunities
+  const shouldShowAllCommunities = !selectedCommunity;
+
+  if (loading) return null;
 
   return (
     <div className="p-3">
@@ -48,9 +49,11 @@ if (loading) return null;
         <AllCommunities />
       ) : (
         <>
-          <div className="grid grid-cols-[2fr_400px] gap-9">
+         <div className="grid grid-cols-[2fr_400px] gap-9">
+            {/* Left Column */}
             <div className="rounded-lg grid grid-cols">
               <div className="bg-white p-3 rounded-md w-full">
+                {/* Community Banner */}
                 <div className="h-70 relative">
                   {selectedCommunity?.banner && (
                     <Image
@@ -74,6 +77,7 @@ if (loading) return null;
                   </div>
                 </div>
 
+                {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="mt-15 ml-4">
                     <h2 className="font-semibold">{selectedCommunity?.name}</h2>
@@ -103,18 +107,16 @@ if (loading) return null;
                         />
                       </div>
                     </div>
+
+                    {/* Community Members */}
                     {selectedCommunity?.memberProfiles?.length > 0 && (
                       <div className="gap-3 w-75 flex items-center justify-between mt-4">
                         <div className="flex">
                           {selectedCommunity?.memberProfiles
                             .slice(0, 3)
                             .map((member, index) => {
-                              const initials = `${
-                                member?.firstName?.[0] || ""
-                              }${member?.lastName?.[0] || ""}`.toUpperCase();
-                              const commonClass = `rounded-full object-cover ${
-                                index > 0 ? "-ml-5" : ""
-                              }`;
+                              const initials = `${member?.firstName?.[0] || ""}${member?.lastName?.[0] || ""}`.toUpperCase();
+                              const commonClass = `rounded-full object-cover ${index > 0 ? "-ml-5" : ""}`;
 
                               return member?.avatar ? (
                                 <Image
@@ -144,11 +146,7 @@ if (loading) return null;
                               .map((m) => m.username)
                               .join(", ")}
                             {selectedCommunity.members.length > 3 && (
-                              <>
-                                {" "}
-                                and {selectedCommunity.members.length - 3}{" "}
-                                others
-                              </>
+                              <> and {selectedCommunity.members.length - 3} others</>
                             )}{" "}
                             are members
                           </p>
@@ -158,6 +156,7 @@ if (loading) return null;
                   </div>
                 </div>
 
+                {/* Post Input */}
                 <div className="rounded-lg p-3 my-6">
                   <div className="relative flex bg-gray-100 rounded-full p-1 mb-4">
                     {tabs.map((tab) => (
@@ -213,6 +212,7 @@ if (loading) return null;
               <div className="mt-5 p-3 bg-white rounded-md">ff</div>
             </div>
 
+            {/* Right Sidebar */}
             <div className="overflow-auto fixed right-10 w-[400px] h-screen pb-23.5 bg-white p-3 rounded-tr-md rounded-tl-md">
               <Input
                 placeholder="Search anything..."

@@ -1,14 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useApp } from "@/app/context/context";
 import Image from "next/image";
 import { toast } from "react-toastify";
 
+
 const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
-  const { API_BASE_URL, setLoading, token } = useApp();
+  const { API_BASE_URL, token } = useApp();
   const [communities, setCommunities] = useState([]);
+  const hasSetDefaultCommunity = useRef(false); // 🆕 prevents repeated setting
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
+
 
   const fetchUserProfiles = async (communityId, memberIds) => {
     try {
@@ -20,6 +24,7 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
           },
         }
       );
+      console.log(res)
       return res.data.members;
     } catch (err) {
       console.error("Error fetching user profiles:", err);
@@ -41,49 +46,58 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
   };
 
   useEffect(() => {
-    const fetchCommunities = async () => {
-      if (!API_BASE_URL || !token) return;
-      try {
-        setLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/api/community/my-community`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  const fetchCommunities = async () => {
+    if (!API_BASE_URL || !token || isLocalLoading) return; // ✅ guard
 
-        if (res.data.success) {
-          const communityList = res.data.communities;
+    try {
+      setIsLocalLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/community/my-community`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-          const enrichedCommunities = await Promise.all(
-            communityList.map(async (community) => {
-              const memberProfiles = await fetchUserProfiles(
-                community._id,
-                community.members.slice(0, 3)
-              );
-              return { ...community, memberProfiles };
-            })
-          );
+      if (res.data.success) {
+        const communityList = res.data.communities;
 
-          setCommunities(enrichedCommunities);
-
-          // ✅ Set default only once and only if no community is selected
-          if (!selectedCommunityId && enrichedCommunities.length > 0) {
-            const first = enrichedCommunities[0];
-            setSelectedCommunity((prev) =>
-              prev?._id === first._id ? prev : first
+        const enrichedCommunities = await Promise.all(
+          communityList.map(async (community) => {
+            const memberProfiles = await fetchUserProfiles(
+              community._id,
+              community.members.slice(0, 3)
             );
-          }
-        } else {
-          toast.error("Failed to fetch communities");
-        }
-      } catch (error) {
-        console.error("Error fetching communities:", error);
-        toast.error("Error fetching communities");
-      } finally {
-        setLoading(false);
-      }
-    };
+            return { ...community, memberProfiles };
+          })
+        );
 
-    fetchCommunities();
-  }, [API_BASE_URL, token]);
+        setCommunities(enrichedCommunities);
+
+        if (
+          !hasSetDefaultCommunity.current &&
+          enrichedCommunities.length > 0
+        ) {
+          hasSetDefaultCommunity.current = true;
+          setSelectedCommunity(enrichedCommunities[0]);
+        }
+      } else {
+        toast.error("Failed to fetch communities");
+      }
+    } catch (error) {
+      console.error("Error fetching communities:", error);
+      toast.error("Error fetching communities");
+    } finally {
+      setIsLocalLoading(false);
+    }
+  };
+
+  fetchCommunities();
+}, [token, API_BASE_URL]);
+
+
+console.log("MyCommunity render", { token, API_BASE_URL });
+useEffect(() => {
+  console.log("useEffect triggered");
+}, [token, API_BASE_URL]);
+
+
 
   return (
     <div className="mt-3">
