@@ -12,7 +12,6 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
 
   const fetchUserProfiles = async (communityId, memberIds) => {
     try {
-      console.log("Fetching profiles for:", communityId, memberIds);
       const res = await axios.get(
         `${API_BASE_URL}/api/community/${communityId}/members`,
         {
@@ -21,7 +20,6 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
           },
         }
       );
-      console.log("Fetched memberProfiles:", res.data.members);
       return res.data.members;
     } catch (err) {
       console.error("Error fetching user profiles:", err);
@@ -36,7 +34,6 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
         community.members.slice(0, 3)
       );
       const updatedCommunity = { ...community, memberProfiles };
-      console.log("Updated selectedCommunity:", updatedCommunity);
       setSelectedCommunity(updatedCommunity);
     } catch (err) {
       toast.error("Failed to load members");
@@ -67,8 +64,12 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
 
           setCommunities(enrichedCommunities);
 
+          // ✅ Set default only once and only if no community is selected
           if (!selectedCommunityId && enrichedCommunities.length > 0) {
-            setSelectedCommunity(enrichedCommunities[0]);
+            const first = enrichedCommunities[0];
+            setSelectedCommunity((prev) =>
+              prev?._id === first._id ? prev : first
+            );
           }
         } else {
           toast.error("Failed to fetch communities");
@@ -113,34 +114,6 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
                   {community.members.length}
                 </div>
               </div>
-
-              {/* {community.memberProfiles?.length > 0 && (
-                <div className="flex justify-between items-center mt-3">
-                  <div className="flex">
-                    {community.memberProfiles.slice(0, 3).map((member, index) => (
-                      <Image
-                        key={member._id}
-                        src={member.avatar || "/images/placeholder.jpg"}
-                        alt={member.username}
-                        width={40}
-                        height={40}
-                        className={`rounded-full object-cover ${index > 0 ? "-ml-5" : ""}`}
-                      />
-                    ))}
-                  </div>
-
-                  <div className="w-[200px] text-sm">
-                    {community.memberProfiles
-                      .slice(0, 3)
-                      .map((m) => m.username)
-                      .join(", ")}
-                    {community.members.length > 3 && (
-                      <> and {community.members.length - 3} others</>
-                    )}{" "}
-                    are members
-                  </div>
-                </div>
-              )} */}
             </div>
           );
         })}
