@@ -109,7 +109,7 @@ useEffect(() => {
             <div
               key={community._id}
               onClick={() => handleCommunityClick(community)}
-              className={`flex flex-col cursor-pointer p-3 rounded-md ${
+              className={`flex flex-col cursor-pointer px-3 p-2 rounded-md ${
                 isActive ? "bg-[#F5F4FF]" : "hover:bg-[#F6F6F6]"
               }`}
             >
