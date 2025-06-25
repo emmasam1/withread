@@ -18,16 +18,29 @@ const Page = () => {
     user?.lastName?.[0] || ""
   }`.toUpperCase();
 
-  const shouldShowAllCommunities =
-    !user || !Array.isArray(user.communities) || user.communities.length === 0;
 
-  if (loading) return null;
-
+  
   const tabs = [
     { key: "1", label: "All Posts" },
     { key: "2", label: "Members" },
     { key: "3", label: "About" },
   ];
+
+   const shouldShowAllCommunities =
+    !user || !Array.isArray(user.communities) || user.communities.length === 0;
+  
+  useEffect(() => {
+    if (
+      user &&
+      Array.isArray(user.communities) &&
+      user.communities.length > 0 &&
+      !selectedCommunity
+  ) {
+    setSelectedCommunity(user.communities[0]); // ✅ set only once
+  }
+}, [user, selectedCommunity]);
+
+if (loading) return null;
 
   return (
     <div className="p-3">
