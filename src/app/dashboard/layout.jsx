@@ -404,7 +404,7 @@ export default function DashboardLayout({ children }) {
             {pathname === "/dashboard/communities" ? (
             <Link href='/dashboard/create-community'>
                 <Button
-                className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
+                className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2 !mt-2"
               >
                 <Image
                   src="/images/add.png"
