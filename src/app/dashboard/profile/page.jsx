@@ -1,37 +1,31 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useApp } from "../../context/context";
 import { toast } from "react-toastify";
 import Image from "next/image";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import { motion } from "framer-motion";
 import UserPost from "../components/UserPost";
 import UserDraft from "../components/UserDraft";
 import AnonymousPost from "../components/AnonymousPost";
 import SavedPost from "../components/SaveedPost";
 import { EditOutlined } from "@ant-design/icons";
-import { Tooltip } from "antd";
 import Communities from "../components/Communities";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
-
-const Page = () => {
+const ProfilePage = () => {
   const searchParams = useSearchParams();
   const { API_BASE_URL, setLoading, loading, user, token } = useApp();
   const [activeTab, setActiveTab] = useState("1");
 
- useEffect(() => {
-  const tabFromURL = searchParams.get("tab");
-  if (tabFromURL) {
-    setActiveTab(tabFromURL);
-
-    // Scroll to the tab area
-    const el = document.getElementById("tab-section");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  }
-}, [searchParams]);
-
+  useEffect(() => {
+    const tabFromURL = searchParams.get("tab");
+    if (tabFromURL) {
+      setActiveTab(tabFromURL);
+      const el = document.getElementById("tab-section");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [searchParams]);
 
   const tabs = [
     { key: "1", label: "My Posts", content: <UserPost /> },
@@ -43,10 +37,8 @@ const Page = () => {
 
   const activeIndex = tabs.findIndex((tab) => tab.key === activeTab);
 
-
   return (
-    <Suspense>
-      <div className="p-3 bg-white">
+    <div className="p-3 bg-white">
       {/* Banner */}
       <div className="rounded-tl-lg rounded-tr-lg">
         <div className="relative">
@@ -78,13 +70,10 @@ const Page = () => {
                 height={500}
                 className="w-full h-full object-cover"
               />
-
-              {/* Always visible text overlay */}
               <div className="absolute bottom-0 w-full bg-black/60 text-white text-xs text-center py-1 cursor-pointer">
                 Edit
               </div>
             </div>
-
             <p className="mt-2 -left-3 !text-left text-2xl relative -top-10 font-bold">
               {user?.firstName} {user?.lastName}
             </p>
@@ -130,7 +119,7 @@ const Page = () => {
         {/* Tab buttons */}
         {tabs.map((tab) => (
           <button
-          id="tab-section"
+            id="tab-section"
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`cursor-pointer flex-1 z-10 text-xs sm:text-sm font-medium transition-colors ${
@@ -147,8 +136,14 @@ const Page = () => {
         {tabs.find((tab) => tab.key === activeTab)?.content}
       </div>
     </div>
-    </Suspense>
   );
 };
+
+// ✅ Final export with Suspense wrapper
+const Page = () => (
+  <Suspense fallback={<div className="p-6">Loading profile...</div>}>
+    <ProfilePage />
+  </Suspense>
+);
 
 export default Page;
