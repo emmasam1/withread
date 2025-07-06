@@ -15,7 +15,7 @@ const PostGrid = ({
   imageKey = "images",
   emptyMessage = "No posts found.",
 }) => {
-  const { API_BASE_URL, setLoading, loading, token } = useApp();
+  const { API_BASE_URL, setLoading, loading, token, user } = useApp();
   const [data, setData] = useState([]);
   const [dataType, setDataType] = useState("");
   const [publishing, setPublishing] = useState({});
@@ -159,7 +159,7 @@ const PostGrid = ({
                   <span className="font-semibold text-sm">{item.name}</span>
                 </div>
                 <p className="text-xs text-gray-600">
-                  {item.creator ? "Admin" : "Joined"}{" "}
+                   {item.creator === user?._id ? "Admin" : "Joined"}{" "}
                   {new Date(item.createdAt).toLocaleDateString()}
                 </p>
               </div>

@@ -46,6 +46,7 @@ export default function DashboardLayout({ children }) {
     setToken(null);
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("token");
+    sessionStorage.removeItem("selectedCommunity");
 
     // Optionally redirect to login or homepage
     router.push("/dashboard"); // or "/" or wherever appropriate

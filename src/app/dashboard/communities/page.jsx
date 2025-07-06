@@ -8,11 +8,21 @@ import { useApp } from "../../context/context";
 import { motion } from "framer-motion";
 import MyCommunity from "../components/MyCommunity";
 import AllCommunities from "../components/AllCommunities";
+import axios from "axios";
 
 const Page = () => {
-  const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
+  const {
+    isLoggedIn,
+    API_BASE_URL,
+    user,
+    setUser,
+    logout,
+    loading,
+    setLoading,
+  } = useApp();
   const [activeTab, setActiveTab] = useState("1");
-  const [selectedCommunity, setSelectedCommunity] = useState(null);
+  const [communityPosts, setCommunityPosts] = useState([]);
+  
 
   const initials = `${user?.firstName?.[0] || ""}${
     user?.lastName?.[0] || ""
@@ -26,17 +36,68 @@ const Page = () => {
 
   const hasSetDefault = useRef(false);
 
+  const [selectedCommunity, setSelectedCommunity] = useState(() => {
+  if (typeof window !== "undefined") {
+    const stored = sessionStorage.getItem("selectedCommunity");
+    return stored ? JSON.parse(stored) : null;
+  }
+  return null;
+});
+
+
   useEffect(() => {
-    if (
-      user &&
-      Array.isArray(user.communities) &&
-      user.communities.length > 0 &&
-      !hasSetDefault.current
-    ) {
-      hasSetDefault.current = true;
-      setSelectedCommunity({ _id: user.communities[0] }); // Placeholder
+    const getCommunityPosts = async () => {
+      if (!selectedCommunity?._id) return;
+
+      const id = selectedCommunity._id;
+      const url = `${API_BASE_URL}/api/post/${id}/posts`;
+
+      try {
+        setLoading(true);
+        const res = await axios.get(url);
+        setCommunityPosts(res.data.posts || []);
+        console.log("All Community post", res);
+      } catch (error) {
+        console.error("Error fetching community posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getCommunityPosts();
+  }, [selectedCommunity?._id]);
+
+  useEffect(() => {
+    if (selectedCommunity) return;
+
+    const stored = sessionStorage.getItem("selectedCommunity");
+
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setSelectedCommunity(parsed);
+        return;
+      } catch (err) {
+        console.error("Invalid stored community", err);
+      }
     }
-  }, [user]);
+
+    if (user?.communities?.length > 0) {
+      setSelectedCommunity({ _id: user.communities[0] }); // fallback
+    }
+  }, [user, selectedCommunity]);
+
+//   useEffect(() => {
+//   const stored = sessionStorage.getItem("selectedCommunity");
+//   if (stored && !selectedCommunity) {
+//     try {
+//       const parsed = JSON.parse(stored);
+//       setSelectedCommunity(parsed);
+//     } catch (err) {
+//       console.error("Invalid stored community", err);
+//     }
+//   }
+// }, []);
 
   const shouldShowAllCommunities = !selectedCommunity;
 
@@ -99,7 +160,7 @@ const Page = () => {
       {shouldShowAllCommunities ? (
         <AllCommunities />
       ) : (
-        <div className="grid grid-cols-[2fr_400px] gap-9">
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_400px] gap-7 p-4">
           {/* Left Column */}
           <div className="rounded-lg grid grid-cols">
             <div className="bg-white p-3 rounded-md w-full">
@@ -243,6 +304,9 @@ const Page = () => {
             </div>
 
             {/* Post Content */}
+            {communityPosts.map((post) => {
+              return(
+
             <div className="mt-5 p-3 bg-white rounded-md">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
@@ -391,10 +455,12 @@ const Page = () => {
                 </div>
               </div>
             </div>
+              )
+            })}
           </div>
 
           {/* Right Sidebar */}
-          <div className="overflow-auto fixed right-10 w-[400px] h-screen pb-24 bg-white p-3 rounded-tr-md rounded-tl-md">
+          <div className="w-full relative lg:fixed lg:right-10 lg:w-[400px] lg:h-screen lg:pb-28 overflow-auto">
             <Input
               placeholder="Search anything..."
               className="mt-4 !rounded-full !bg-[#F6F6F6] !border-none"
@@ -410,6 +476,7 @@ const Page = () => {
             <MyCommunity
               selectedCommunityId={selectedCommunity?._id}
               setSelectedCommunity={setSelectedCommunity}
+              selectedCommunity={selectedCommunity}
             />
           </div>
         </div>

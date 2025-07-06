@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useApp } from "../../context/context";
 import { toast } from "react-toastify";
 import Image from "next/image";
@@ -12,10 +12,24 @@ import SavedPost from "../components/SaveedPost";
 import { EditOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import Communities from "../components/Communities";
+import { useSearchParams } from "next/navigation";
 
 const Page = () => {
+  const searchParams = useSearchParams();
   const { API_BASE_URL, setLoading, loading, user, token } = useApp();
   const [activeTab, setActiveTab] = useState("1");
+
+ useEffect(() => {
+  const tabFromURL = searchParams.get("tab");
+  if (tabFromURL) {
+    setActiveTab(tabFromURL);
+
+    // Scroll to the tab area
+    const el = document.getElementById("tab-section");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }
+}, [searchParams]);
+
 
   const tabs = [
     { key: "1", label: "My Posts", content: <UserPost /> },
@@ -26,6 +40,7 @@ const Page = () => {
   ];
 
   const activeIndex = tabs.findIndex((tab) => tab.key === activeTab);
+
 
   return (
     <div className="p-3 bg-white">
@@ -112,6 +127,7 @@ const Page = () => {
         {/* Tab buttons */}
         {tabs.map((tab) => (
           <button
+          id="tab-section"
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`cursor-pointer flex-1 z-10 text-xs sm:text-sm font-medium transition-colors ${

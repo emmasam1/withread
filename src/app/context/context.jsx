@@ -47,6 +47,14 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // ✅ NEW: Update specific fields in user object
+  const updateUser = (newUserData) => {
+    setUser((prevUser) => ({
+      ...prevUser,
+      ...newUserData,
+    }));
+  };
+
   // Set token and persist to sessionStorage
   const setToken = (tokenValue) => {
     if (tokenValue) {
@@ -64,12 +72,13 @@ export const AppProvider = ({ children }) => {
         API_BASE_URL,
         user,
         setUser,
+        updateUser, // ✅ exposed here
         token,
         setToken,
         loading,
         setLoading,
         draftLoading,
-        setDraftLoading
+        setDraftLoading,
       }}
     >
       {children}

@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useApp } from "@/app/context/context";
 import Image from "next/image";
 import { toast } from "react-toastify";
+import Link from "next/link";
 
-
-const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
+const MyCommunity = ({
+  selectedCommunityId,
+  setSelectedCommunity,
+  selectedCommunity,
+}) => {
   const { API_BASE_URL, token } = useApp();
   const [communities, setCommunities] = useState([]);
-  const hasSetDefaultCommunity = useRef(false); // 🆕 prevents repeated setting
   const [isLocalLoading, setIsLocalLoading] = useState(false);
-
 
   const fetchUserProfiles = async (communityId, memberIds) => {
     try {
@@ -24,7 +26,6 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
           },
         }
       );
-      console.log(res)
       return res.data.members;
     } catch (err) {
       console.error("Error fetching user profiles:", err);
@@ -33,6 +34,8 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
   };
 
   const handleCommunityClick = async (community) => {
+    if (selectedCommunity?._id === community._id) return;
+
     try {
       const memberProfiles = await fetchUserProfiles(
         community._id,
@@ -40,68 +43,76 @@ const MyCommunity = ({ selectedCommunityId, setSelectedCommunity }) => {
       );
       const updatedCommunity = { ...community, memberProfiles };
       setSelectedCommunity(updatedCommunity);
+      sessionStorage.setItem(
+        "selectedCommunity",
+        JSON.stringify(updatedCommunity)
+      );
     } catch (err) {
       toast.error("Failed to load members");
     }
   };
 
   useEffect(() => {
-  const fetchCommunities = async () => {
-    if (!API_BASE_URL || !token || isLocalLoading) return; // ✅ guard
+    const fetchCommunities = async () => {
+      if (!API_BASE_URL || !token || isLocalLoading) return;
 
-    try {
-      setIsLocalLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/api/community/my-community`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        setIsLocalLoading(true);
 
-      if (res.data.success) {
-        const communityList = res.data.communities;
-
-        const enrichedCommunities = await Promise.all(
-          communityList.map(async (community) => {
-            const memberProfiles = await fetchUserProfiles(
-              community._id,
-              community.members.slice(0, 3)
-            );
-            return { ...community, memberProfiles };
-          })
+        const res = await axios.get(
+          `${API_BASE_URL}/api/community/my-community`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
 
-        setCommunities(enrichedCommunities);
+        if (res.data.success) {
+          const communityList = res.data.communities;
 
-        if (
-          !hasSetDefaultCommunity.current &&
-          enrichedCommunities.length > 0
-        ) {
-          hasSetDefaultCommunity.current = true;
-          setSelectedCommunity(enrichedCommunities[0]);
+          const enrichedCommunities = await Promise.all(
+            communityList.map(async (community) => {
+              const memberProfiles = await fetchUserProfiles(
+                community._id,
+                community.members.slice(0, 3)
+              );
+              return { ...community, memberProfiles };
+            })
+          );
+
+          setCommunities(enrichedCommunities);
+
+          const stored = sessionStorage.getItem("selectedCommunity");
+
+          // Set default community if not already selected
+          if (!selectedCommunity && !stored && enrichedCommunities.length > 0) {
+            const firstCommunity = enrichedCommunities[0];
+            setSelectedCommunity(firstCommunity);
+            sessionStorage.setItem(
+              "selectedCommunity",
+              JSON.stringify(firstCommunity)
+            );
+          }
+        } else {
+          toast.error("Failed to fetch communities");
         }
-      } else {
-        toast.error("Failed to fetch communities");
+      } catch (error) {
+        console.error("Error fetching communities:", error);
+        toast.error("Error fetching communities");
+      } finally {
+        setIsLocalLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching communities:", error);
-      toast.error("Error fetching communities");
-    } finally {
-      setIsLocalLoading(false);
-    }
-  };
+    };
 
-  fetchCommunities();
-}, [token, API_BASE_URL]);
-
-
-console.log("MyCommunity render", { token, API_BASE_URL });
-useEffect(() => {
-  console.log("useEffect triggered");
-}, [token, API_BASE_URL]);
-
-
+    fetchCommunities();
+  }, [token, API_BASE_URL]);
 
   return (
     <div className="mt-3">
-      <h1 className="font-medium my-3 text-md">My Community</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="font-medium my-3 text-md">My Community</h1>
+        <Link href="/dashboard/profile?tab=5">See all</Link>
+      </div>
+
       <div className="flex flex-col gap-3">
         {communities.map((community) => {
           const isActive = selectedCommunityId === community._id;
@@ -136,4 +147,4 @@ useEffect(() => {
   );
 };
 
-export default MyCommunity;
+export default React.memo(MyCommunity);
