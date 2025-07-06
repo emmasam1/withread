@@ -328,7 +328,9 @@ const Page = () => {
           <div className="bg-white rounded-md p-3 mt-4">
             <div className="flex justify-between items-center">
               <h1 className="font-semibold">Popular Communities</h1>
-              <p>See all</p>
+              <Link href="#" className="text-xs">
+                See all
+              </Link>
             </div>
 
             {loadingCommunities

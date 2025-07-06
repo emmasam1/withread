@@ -13,6 +13,8 @@ import { EditOutlined } from "@ant-design/icons";
 import { Tooltip } from "antd";
 import Communities from "../components/Communities";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+
 
 const Page = () => {
   const searchParams = useSearchParams();
@@ -43,7 +45,8 @@ const Page = () => {
 
 
   return (
-    <div className="p-3 bg-white">
+    <Suspense>
+      <div className="p-3 bg-white">
       {/* Banner */}
       <div className="rounded-tl-lg rounded-tr-lg">
         <div className="relative">
@@ -144,6 +147,7 @@ const Page = () => {
         {tabs.find((tab) => tab.key === activeTab)?.content}
       </div>
     </div>
+    </Suspense>
   );
 };
 
