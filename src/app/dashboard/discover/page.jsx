@@ -132,11 +132,12 @@ const Page = () => {
     const recommendedContent = async () => {
       try {
         const res = await axios.get(
-          `${API_BASE_URL}/api/post/user/suggested?page=1&limit=1`,
+          `${API_BASE_URL}/api/community/suggestions?page=1&limit=1`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         // console.log("recommended res", res);
-        setSingleCommunities(res.data.posts || []);
+        setSingleCommunities(res.data.communities || []);
+        console.log(res.data)
       } catch (error) {
         console.error("Error fetching communities:", error);
         toast.error("Failed to load communities");
@@ -444,36 +445,34 @@ const Page = () => {
                   />
                 ))
               : singleCommunity.map((e) => {
-                  const initials = `${e?.author?.firstName?.[0] || ""}${
-                    e?.author?.lastName?.[0] || ""
+                  const initials = `${e?.creator?.firstName?.[0] || ""}${
+                    e?.creator?.lastName?.[0] || ""
                   }`.toUpperCase();
-
-                  const imageUrl = e?.images?.[0] || "/default-image.png";
 
                   return (
                     <div key={e._id} className="mt-5">
                       <Image
-                        src={imageUrl}
+                        src={e.avatar}
                         alt={e.title}
                         width={600}
-                        height={500}
-                        className="rounded-md object-cover"
+                        height={300}
+                        className="rounded-md object-cover h-50"
                       />
 
                       <h1 className="mt-2 text-[.9rem] font-semibold">
-                        {e.title}
+                        {e.name}
                       </h1>
 
                       <p className="mt-2 text-[.85rem] text-gray-700">
-                        {e.content?.slice(0, 100)}...
+                        {e.about?.slice(0, 100)}...
                       </p>
 
-                      <div className="mt-3 flex gap-3 items-center">
+                      <div className="mt-3 flex gap-1 items-center">
                         <div className="rounded-full h-10 w-10">
-                          {e?.author?.avatar ? (
+                          {e?.creator?.avatar ? (
                             <Image
-                              src={e.author.avatar}
-                              alt={e.author.firstName}
+                              src={e.creator.avatar}
+                              alt={e.creator.firstName}
                               width={40}
                               height={40}
                               className="h-full w-full rounded-full object-cover"
@@ -489,6 +488,8 @@ const Page = () => {
                         <h1 className="text-[.85rem] font-medium">
                           {e.author?.firstName} {e.author?.lastName}
                         </h1>
+
+                        <div><h2>{e.creator?.username}</h2></div>
                       </div>
                     </div>
                   );
