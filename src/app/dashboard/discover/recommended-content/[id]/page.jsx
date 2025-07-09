@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Button, Divider, Skeleton, Input } from "antd";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { motion } from "framer-motion";
 
 const PostPage = () => {
   const { API_BASE_URL, setLoading, loading, token, user } = useApp();
@@ -18,6 +19,7 @@ const PostPage = () => {
   const [replyInputs, setReplyInputs] = useState({});
   const [commentInput, setCommentInput] = useState("");
   const [comments, setComments] = useState([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   useEffect(() => {
     if (!API_BASE_URL || !postId) return;
@@ -101,6 +103,11 @@ const PostPage = () => {
       console.error("Like error:", err);
       toast.error("Something went wrong. Please try again.");
     }
+  };
+
+  const handleEmojiClick = (emojiData) => {
+    const emoji = emojiData.emoji;
+    setCommentInput((prev) => prev + emoji);
   };
 
   const postImage =

@@ -258,7 +258,7 @@ const Page = () => {
                       </h1>
                     </div>
                   )}
-                  <Link href="/dashboard/newpost" className="w-full">
+                 <Link href={`/dashboard/communities/${selectedCommunity?._id}`} className="w-full">
                     <Input
                       placeholder="Got something on your mind? Spill it out"
                       className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3"
@@ -270,7 +270,7 @@ const Page = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex gap-10 items-center">
                     <Link
-                      href="/dashboard/newpost"
+                      href={`/dashboard/communities/${selectedCommunity?._id}`}
                       className="flex tems-center !text-black justify-center gap-2 text-sm"
                     >
                       <Image
@@ -283,7 +283,7 @@ const Page = () => {
                       Photo/Video
                     </Link>
                     <Link
-                      href="/dashboard/newpost"
+                      href={`/dashboard/communities/${selectedCommunity?._id}`}
                       className="flex tems-center !text-black justify-center gap-2 text-sm"
                     >
                       <Image
