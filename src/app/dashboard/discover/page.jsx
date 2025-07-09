@@ -137,7 +137,7 @@ const Page = () => {
         );
         // console.log("recommended res", res);
         setSingleCommunities(res.data.communities || []);
-        console.log(res.data)
+        console.log(res.data);
       } catch (error) {
         console.error("Error fetching communities:", error);
         toast.error("Failed to load communities");
@@ -428,7 +428,7 @@ const Page = () => {
             <div className="flex justify-between items-center">
               <h1 className="font-semibold">Recommended Contents</h1>
               <Link
-                href="/dashboard/discover/recommended-community"
+                href="/dashboard/discover/recommended-content"
                 className="text-xs"
               >
                 See all
@@ -489,7 +489,9 @@ const Page = () => {
                           {e.author?.firstName} {e.author?.lastName}
                         </h1>
 
-                        <div><h2>{e.creator?.username}</h2></div>
+                        <div>
+                          <h2>{e.creator?.username}</h2>
+                        </div>
                       </div>
                     </div>
                   );
