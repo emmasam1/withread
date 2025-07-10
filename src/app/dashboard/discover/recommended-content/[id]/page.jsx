@@ -1,36 +1,71 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { useApp } from "@/app/context/context";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { GoArrowLeft } from "react-icons/go";
 import Image from "next/image";
 import { Button, Divider, Skeleton, Input } from "antd";
+import { GoArrowLeft } from "react-icons/go";
+import { motion } from "framer-motion";
+import EmojiPicker from "emoji-picker-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { motion } from "framer-motion";
+import { useApp } from "@/app/context/context";
+
+const extractEmojis = (text) => {
+  return [
+    ...text.matchAll(
+      /([\u{1F600}-\u{1F6FF}\u{1F300}-\u{1F5FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}])/gu
+    ),
+  ].map((match) => match[0]);
+};
+
+const AvatarPlaceholder = ({ text }) => (
+  <span className="font-semibold text-gray-400">{text}</span>
+);
 
 const PostPage = () => {
-  const { API_BASE_URL, setLoading, loading, token, user } = useApp();
+  const { API_BASE_URL, setLoading, loading, token, user, setUser } = useApp();
   const { id: postId } = useParams();
+  const router = useRouter();
+
   const [post, setPost] = useState(null);
-  const [likedAnimation, setLikedAnimation] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentInput, setCommentInput] = useState("");
   const [replyingToIndex, setReplyingToIndex] = useState(null);
   const [replyInputs, setReplyInputs] = useState({});
-  const [commentInput, setCommentInput] = useState("");
-  const [comments, setComments] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [joinLoading, setJoinLoading] = useState(false)
+  const [likedAnimation, setLikedAnimation] = useState(null);
+  const [communityId, setCommunityId] = useState(null);
+  const [joined, setJoined] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [replyEmojiPickers, setReplyEmojiPickers] = useState({});
+
+  const isLiked = post?.likes?.includes(user?._id);
+  const postImage = post?.images?.[0] || "/images/image1.png";
+
+  const getUserInitials = (u) => {
+    if (!u) return "??";
+    const first = u.firstName?.trim()?.[0] || "";
+    const last = u.lastName?.trim()?.[0] || "";
+    return (first + last).toUpperCase() || "??";
+  };
+
+  const formatMemberCount = (num) => {
+    if (num >= 1_000_000)
+      return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    return num.toString();
+  };
 
   useEffect(() => {
     if (!API_BASE_URL || !postId) return;
-
-    const getPost = async () => {
+    const fetchPost = async () => {
       try {
         setLoading(true);
         const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
         setPost(res.data.post);
-        console.log("this is single", res.data);
+        setCommunityId(res.data.post?.community?._id);
       } catch (err) {
         toast.error("Failed to load post.");
         console.error(err);
@@ -38,48 +73,29 @@ const PostPage = () => {
         setLoading(false);
       }
     };
+    fetchPost();
+  }, [API_BASE_URL, postId]);
 
-    getPost();
-  }, [postId, API_BASE_URL]);
-
-  const addComment = async () => {
-    if (!user) {
-      toast.error("You need to log in to comment.");
-      router.push("/signin");
-      return;
-    }
-
-    if (!commentInput.trim()) {
-      toast.error("Comment cannot be empty.");
-      return;
-    }
-
-    const payload = {
-      body: commentInput.trim(),
-      emojis: extractEmojis(commentInput),
+  useEffect(() => {
+    if (!API_BASE_URL || !postId) return;
+    const fetchComments = async () => {
+      try {
+        const { data } = await axios.get(
+          `${API_BASE_URL}/api/comment/${postId}`
+        );
+        setComments(data.comments);
+      } catch (err) {
+        console.error("Fetch comments error:", err);
+      }
     };
+    fetchComments();
+  }, [API_BASE_URL, postId]);
 
-    try {
-      setLoading(true);
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/comment/${postId}/comments`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setComments((prev) => [data.comment, ...prev]);
-      setCommentInput("");
-      toast.success("Comment added.");
-      setShowEmojiPicker(false);
-    } catch (err) {
-      console.error("Add comment failed:", err);
-      toast.error("Failed to add comment.");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (user?.communities?.includes(communityId)) {
+      setJoined(true);
     }
-  };
-
-  const isLiked = post?.likes?.includes(user?._id);
+  }, [user, communityId]);
 
   const handleLikeDislike = async () => {
     if (!token) return toast.error("You need to log in to like posts.");
@@ -97,7 +113,6 @@ const PostPage = () => {
         { action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setPost(data.post);
       toast.success(data.message);
     } catch (err) {
@@ -106,30 +121,98 @@ const PostPage = () => {
     }
   };
 
-  const handleEmojiClick = (emojiData) => {
-    const emoji = emojiData.emoji;
-    setCommentInput((prev) => prev + emoji);
+  const addComment = async () => {
+    if (!user) {
+      toast.error("You need to log in to comment.");
+      router.push("/signin");
+      return;
+    }
+    if (!commentInput.trim()) return toast.error("Comment cannot be empty.");
+
+    try {
+      setCommentLoading(true);
+      const payload = {
+        body: commentInput.trim(),
+        emojis: extractEmojis(commentInput),
+      };
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/comment/${postId}/comments`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setComments((prev) => [data.comment, ...prev]);
+      setCommentInput("");
+      setShowEmojiPicker(false);
+      toast.success("Comment added.");
+    } catch (err) {
+      console.error("Add comment failed:", err);
+      toast.error("Failed to add comment.");
+    } finally {
+      setCommentLoading(false);
+    }
   };
 
-  const postImage =
-    post?.images && post?.images.length > 0
-      ? post.images[0]
-      : "/images/image1.png";
+  const handleReplySubmit = async (commentId, index) => {
+    const replyText = replyInputs[index]?.trim();
+    if (!replyText) return;
 
-  const formatMemberCount = (num) => {
-    if (num >= 1_000_000)
-      return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
-    if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
-    return num.toString();
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/comment/${commentId}/reply`,
+        { body: replyText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setComments((prev) =>
+        prev.map((c, i) =>
+          i === index
+            ? { ...c, replies: [...(c.replies || []), data.comment] }
+            : c
+        )
+      );
+      setReplyingToIndex(null);
+      setReplyInputs((prev) => ({ ...prev, [index]: "" }));
+    } catch (err) {
+      console.error("Reply error:", err);
+      toast.error("Failed to post reply.");
+    }
+  };
+
+  const handleReplyEmojiClick = (emojiData, index) => {
+    setReplyInputs((prev) => ({
+      ...prev,
+      [index]: (prev[index] || "") + emojiData.emoji,
+    }));
   };
 
   const joinCommunity = async () => {
     try {
-      
+      setJoinLoading(true);
+      const res = await axios.post(
+        `${API_BASE_URL}/api/community/${communityId}/join`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      toast.success(res.data.message || "Community joined!");
+      setJoined(true);
+      const updatedUser = {
+        ...user,
+        communities: [...(user?.communities || []), communityId],
+      };
+      setUser(updatedUser);
+      sessionStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (error) {
-      
+      console.error("Join community error:", error);
+      toast.error(error?.response?.data?.message || "Failed to join community");
+    } finally {
+      setJoinLoading(false);
     }
-  }
+  };
 
   return (
     <div className="p-3">
@@ -173,7 +256,7 @@ const PostPage = () => {
 
                     <div>
                       <div className="flex items-center gap-3">
-                        <h1 className="text-xs">Cyber Expert Community</h1>
+                        <h1 className="text-xs">{post?.community?.name}</h1>
                         <Image
                           src="/images/dot.png"
                           alt="dot"
@@ -196,7 +279,7 @@ const PostPage = () => {
                   alt="post image"
                   width={1000}
                   height={900}
-                  className="rounded-lg w-full object-cover max-h-[500px]"
+                  className="rounded-lg w-full h-[500px] object-contain"
                 />
 
                 <div className="mt-4">
@@ -274,16 +357,20 @@ const PostPage = () => {
                 <Input
                   value={commentInput}
                   onChange={(e) => setCommentInput(e.target.value)}
+                  disabled={commentLoading}
                   placeholder="Add your comment"
                   className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3 focus:ring-0 focus:outline-none flex-1"
                 />
+
                 <Button
                   className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8"
-                  onClick={() => addComment(post._id)}
-                  loading={loading}
+                  onClick={addComment}
+                  loading={commentLoading}
+                  disabled={commentLoading}
                 >
-                  Comment
+                  {commentLoading ? "Commenting..." : "Comment"}
                 </Button>
+
                 <motion.button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   whileHover={{ scale: 1.2, rotate: 10 }}
@@ -308,6 +395,168 @@ const PostPage = () => {
                   />
                 </div>
               )}
+            </div>
+
+            <div className="space-y-6 mt-6">
+              {comments.map((comment, index) => (
+                <div
+                  key={comment._id}
+                  className="bg-blue-50 p-4 rounded-lg shadow-sm"
+                >
+                  {/* Comment Header */}
+                  <div className="flex gap-3 items-start">
+                    <div className="shrink-0">
+                      {comment.user?.avatar ? (
+                        <Image
+                          src={comment.user.avatar}
+                          alt="avatar"
+                          width={45}
+                          height={45}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <div className="bg-gray-200 w-12 h-12 flex items-center justify-center rounded-full">
+                          <AvatarPlaceholder
+                            text={getUserInitials(comment.user)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="font-semibold text-sm">
+                        {comment.user?.firstName} {comment.user?.lastName}
+                      </h2>
+                      <p className="text-xs text-gray-500">
+                        {new Date(comment.createdAt).toLocaleString()}
+                      </p>
+                      <p className="mt-2 text-sm text-gray-800">
+                        {comment.body}
+                      </p>
+
+                      {/* Comment actions */}
+                      <div className="flex gap-4 mt-2 text-xs text-blue-600">
+                        <button>Like</button>
+                        <button
+                          className="cursor-pointer"
+                          onClick={() =>
+                            setReplyingToIndex(
+                              replyingToIndex === index ? null : index
+                            )
+                          }
+                        >
+                          Reply
+                        </button>
+                      </div>
+
+                      {/* Reply Input */}
+                      {replyingToIndex === index && (
+                        <div className="mt-3">
+                          <Input.TextArea
+                            placeholder="Write a reply..."
+                            value={replyInputs[index] || ""}
+                            onChange={(e) =>
+                              setReplyInputs({
+                                ...replyInputs,
+                                [index]: e.target.value,
+                              })
+                            }
+                          />
+                          <div className="mt-2 flex justify-end">
+                            <Button
+                              className="!bg-black !text-white !rounded-full"
+                              size="small"
+                              type="primary"
+                              onClick={() =>
+                                handleReplySubmit(comment._id, index)
+                              }
+                            >
+                              Send
+                            </Button>
+                            <motion.button
+                              onClick={() =>
+                                setReplyEmojiPickers((prev) => ({
+                                  ...prev,
+                                  [index]: !prev[index],
+                                }))
+                              }
+                              whileHover={{ scale: 1.2, rotate: 10 }}
+                              transition={{ type: "spring", stiffness: 300 }}
+                              className="cursor-pointer ml-2"
+                            >
+                              <Image
+                                src="/images/emoji.png"
+                                alt="emoji"
+                                width={24}
+                                height={24}
+                              />
+                            </motion.button>
+                          </div>
+                          {replyEmojiPickers[index] && (
+                            <div className="mt-2">
+                              <EmojiPicker
+                                onEmojiClick={(emojiData) =>
+                                  handleReplyEmojiClick(emojiData, index)
+                                }
+                                height={350}
+                                width="100%"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Replies */}
+                      {Array.isArray(comment.replies) &&
+                        comment.replies.length > 0 && (
+                          <div className="mt-4 space-y-4 pl-6 border-l border-gray-200">
+                            {comment.replies.map((reply) => (
+                              <div
+                                key={reply?._id}
+                                className="bg-white p-3 rounded-md shadow-sm"
+                              >
+                                <div className="flex gap-3 items-start">
+                                  <div className="shrink-0">
+                                    {reply?.user?.avatar ? (
+                                      <Image
+                                        src={reply?.user?.avatar}
+                                        alt="avatar"
+                                        width={35}
+                                        height={35}
+                                        className="rounded-full"
+                                      />
+                                    ) : (
+                                      <div className="bg-gray-200 w-10 h-10 flex items-center justify-center rounded-full">
+                                        <AvatarPlaceholder
+                                          text={getUserInitials(reply?.user)}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h3 className="font-medium text-sm">
+                                      {reply?.user?.firstName}{" "}
+                                      {reply?.user?.lastName}
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                      {reply?.createdAt
+                                        ? new Date(
+                                            reply?.createdAt
+                                          ).toLocaleString()
+                                        : "Just now"}
+                                    </p>
+                                    <p className="mt-1 text-sm text-gray-800">
+                                      {reply?.body}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </Skeleton>
@@ -346,8 +595,17 @@ const PostPage = () => {
                     : ""}
                 </p>
 
-                <Button className="!bg-black !rounded-full !text-white mt-4 p-4">
-                  Join Community
+                <Button
+                  onClick={joinCommunity}
+                  loading={joinLoading}
+                  disabled={joined}
+                  className={`!rounded-full mt-4 p-4 transition-all duration-300 ${
+                    joined
+                      ? "!bg-[#E4E4E7] !text-gray-500 cursor-not-allowed"
+                      : "!bg-black !text-white hover:!bg-gray-800"
+                  }`}
+                >
+                  {joined ? "Member" : "Join Community"}
                 </Button>
               </div>
             )}
