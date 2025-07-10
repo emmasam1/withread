@@ -20,6 +20,7 @@ const PostPage = () => {
   const [commentInput, setCommentInput] = useState("");
   const [comments, setComments] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false)
 
   useEffect(() => {
     if (!API_BASE_URL || !postId) return;
@@ -29,7 +30,7 @@ const PostPage = () => {
         setLoading(true);
         const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
         setPost(res.data.post);
-        console.log(res.data);
+        console.log("this is single", res.data);
       } catch (err) {
         toast.error("Failed to load post.");
         console.error(err);
@@ -115,6 +116,21 @@ const PostPage = () => {
       ? post.images[0]
       : "/images/image1.png";
 
+  const formatMemberCount = (num) => {
+    if (num >= 1_000_000)
+      return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    return num.toString();
+  };
+
+  const joinCommunity = async () => {
+    try {
+      
+    } catch (error) {
+      
+    }
+  }
+
   return (
     <div className="p-3">
       <Link
@@ -138,7 +154,23 @@ const PostPage = () => {
               <div className="bg-white p-3 rounded-lg">
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="rounded-full h-10 w-10 bg-red-500" />
+                    <div className="rounded-full h-10 w-10 overflow-hidden bg-gray-300 flex items-center justify-center text-white font-semibold text-sm uppercase">
+                      {post?.author?.avatar ? (
+                        <Image
+                          src={post.author.avatar}
+                          alt="avatar"
+                          height={40}
+                          width={40}
+                          className="object-cover w-full h-full rounded-full"
+                        />
+                      ) : (
+                        <>
+                          {post?.author?.firstName?.[0]}
+                          {post?.author?.lastName?.[0]}
+                        </>
+                      )}
+                    </div>
+
                     <div>
                       <div className="flex items-center gap-3">
                         <h1 className="text-xs">Cyber Expert Community</h1>
@@ -153,7 +185,7 @@ const PostPage = () => {
                         </h1>
                       </div>
                       <p className="text-xs text-gray-400">
-                        {new Date(post.publishedAt).toLocaleString()}
+                        {new Date(post?.publishedAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -290,38 +322,47 @@ const PostPage = () => {
               </Button>
             </div>
 
-            <div className="flex justify-center items-center flex-col mt-7">
-              <div className="rounded-full h-30 w-30">
-                <Image
-                  src="/images/image1.png"
-                  alt="community avatar"
-                  width={500}
-                  height={500}
-                  className="object-cover rounded-full h-full w-full"
-                />
-              </div>
-              <h1 className="font-semibold my-3">Cyber Expert Community</h1>
-              <p className="text-xs text-gray-600">50K Active Members</p>
-              <p className="mt-3 text-center text-[.8rem]">
-                New Solar Panel Technology that Sell Sunlight at Night Increases
-                Efficiency by 40%...
-              </p>
+            {post && (
+              <div className="flex justify-center items-center flex-col mt-7">
+                <div className="rounded-full h-30 w-30">
+                  <Image
+                    src={post?.community?.banner}
+                    alt="community avatar"
+                    width={500}
+                    height={500}
+                    className="object-cover rounded-full h-full w-full"
+                  />
+                </div>
+                <h1 className="font-semibold my-3">{post?.community?.name}</h1>
+                <p className="text-xs text-gray-600">
+                  {formatMemberCount(post?.community?.members?.length)} Active
+                  Members
+                </p>
+                <p className="mt-3 text-center text-[.8rem]">
+                  {post?.community?.about
+                    ? post.community.about.length > 100
+                      ? post.community.about.slice(0, 100) + "..."
+                      : post.community.about
+                    : ""}
+                </p>
 
-              <Button className="!bg-black !rounded-full !text-white mt-4 p-4">
-                Join Community
-              </Button>
-            </div>
+                <Button className="!bg-black !rounded-full !text-white mt-4 p-4">
+                  Join Community
+                </Button>
+              </div>
+            )}
 
             <Divider />
 
             <div>
               <h1 className="font-semibold mb-3">Community Rules</h1>
               <ol className="list-decimal pl-7 flex flex-col gap-2 text-xs">
-                <li>No Posting Of Fake Content</li>
-                <li>No Spamming</li>
-                <li>Respect Community Guidelines</li>
-                <li>No Hate Speech</li>
-                <li>No NSFW Content</li>
+                {post?.community?.rules
+                  ?.split(/\r?\n/)
+                  .filter((rule) => rule.trim() !== "")
+                  .map((rule, idx) => (
+                    <li key={idx}>{rule.trim()}</li>
+                  ))}
               </ol>
             </div>
 
@@ -330,21 +371,35 @@ const PostPage = () => {
             <div>
               <h1 className="font-semibold mb-3">Moderators</h1>
               <div className="flex gap-3 flex-col">
-                <div className="flex gap-3 items-center">
-                  <div className="rounded-full w-10 h-10">
-                    <Image
-                      src="/images/Rectangle.png"
-                      alt="user image"
-                      height={50}
-                      width={50}
-                      className="object-cover w-full h-full"
-                    />
+                {post?.community?.moderators?.length > 0 && (
+                  <div className="flex gap-3 items-center">
+                    <div className="rounded-full w-10 h-10 bg-gray-300 flex items-center justify-center overflow-hidden text-white font-semibold text-sm">
+                      {post.community.moderators[0].avatar ? (
+                        <Image
+                          src={post.community.moderators[0].avatar}
+                          alt="moderator avatar"
+                          height={40}
+                          width={40}
+                          className="object-cover w-full h-full rounded-full"
+                        />
+                      ) : (
+                        <>
+                          {post.community.moderators[0].firstName?.charAt(0)}
+                          {post.community.moderators[0].lastName?.charAt(0)}
+                        </>
+                      )}
+                    </div>
+                    <div>
+                      <h1 className="font-semibold">
+                        {post.community.moderators[0].firstName}{" "}
+                        {post.community.moderators[0].lastName}
+                      </h1>
+                      <p className="text-[.8rem]">
+                        @{post.community.moderators[0].username}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h1 className="font-semibold">Isreal Ackermann</h1>
-                    <p className="text-[.8rem]">@ackermann</p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
