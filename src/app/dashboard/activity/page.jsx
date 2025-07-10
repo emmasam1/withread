@@ -4,6 +4,8 @@ import { Button } from "antd";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import AllActivities from "../components/AllActivities";
+import UnreadActivities from "../components/UnreadActivities";
+import ActivitieCommunity from "../components/ActivitieCommunity";
 
 
 // Dynamically import motion
@@ -15,8 +17,8 @@ const Page = () => {
 
   const tabs = [
     { key: "1", label: "All Activities", content: <AllActivities/> },
-    { key: "2", label: "Unread activities", content: "" },
-    { key: "3", label: "Communities", content: "" },
+    { key: "2", label: "Unread activities", content: <UnreadActivities /> },
+    { key: "3", label: "Communities", content: <ActivitieCommunity /> },
   ];
 
   return (

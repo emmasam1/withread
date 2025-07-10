@@ -1,10 +1,9 @@
 "use client";
 import { Button } from "antd";
 import Image from "next/image";
-import { useState } from "react";
 
-const AllActivities = () => {
-  const notifications = [
+const UnreadActivities = () => {
+    const notifications = [
     {
       id: 1,
       user: {
@@ -93,29 +92,9 @@ const AllActivities = () => {
       read: false,
     },
   ];
-
-  const [responseState, setResponseState] = useState({}); // { [id]: { loading: boolean, accepted: boolean } }
-
-  const handleAccept = (id) => {
-    setResponseState((prev) => ({
-      ...prev,
-      [id]: { loading: true, accepted: false },
-    }));
-
-    setTimeout(() => {
-      setResponseState((prev) => ({
-        ...prev,
-        [id]: { loading: false, accepted: true },
-      }));
-    }, 2000);
-  };
-
-  return (
-    <div className="flex flex-col">
-      {notifications.map((item, index) => {
-        const state = responseState[item.id] || {};
-
-        return (
+   return (
+      <div className="flex flex-col">
+        {notifications.map((item, index) => (
           <div
             key={item.id}
             className={`flex justify-between items-start px-4 py-4 ${
@@ -123,10 +102,12 @@ const AllActivities = () => {
             }`}
           >
             <div className="flex gap-2 items-start w-full">
+              {/* Unread dot */}
               {!item.read && (
                 <div className="w-2 h-2 mt-2 rounded-full bg-purple-500" />
               )}
-
+  
+              {/* Avatar and content */}
               <div className="flex gap-2 w-full">
                 <div className="rounded-full h-10 w-10 overflow-hidden">
                   <Image
@@ -144,62 +125,46 @@ const AllActivities = () => {
                       {item.user.username}
                     </span>
                   </div>
-
-                  <div className="flex gap-2">
+                <div className="flex gap-2">
                     <p className="text-xs text-gray-600">{item.message}</p>
-                    {item.action && (
-                      <div className="-mt-1.5">
-                        <button className="text-xs text-purple-600 underline">
-                          {item.action}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Buttons / Loader / Accepted State */}
+                  
+                   {/* Action link */}
+                  {item.action && (
+                    <div className="-mt-1.5">
+                      <button className="text-xs text-purple-600 underline">
+                        {item.action}
+                      </button>
+                    </div>
+                  )}
+                </div>
+  
+                  {/* Action buttons */}
                   {item.actions && (
                     <div className="flex gap-2 mt-2">
-                      {state.accepted ? (
+                      {item.actions.map((action, i) => (
                         <Button
+                          key={i}
                           size="small"
-                          className="!bg-[#F1F1F2] !text-black !rounded-full !border-0"
+                          className={
+                            action === "Accept" ? "!bg-black !text-white !rounded-full hover:!text-white !border-0 px-2 py-1" : "!bg-[#F1F1F2] !text-black !rounded-full hover:!text-black !border-0 px-2 py-1"
+                          }
                         >
-                            <Image src="/images/tick-circle.png" alt="icon" width={17} height={17} />
-                          Invitation Accepted!
+                          {action}
                         </Button>
-                      ) : (
-                        <>
-                          <Button
-                            size="small"
-                            className="!bg-black !text-white !rounded-full hover:!text-white !border-0 px-2 py-1"
-                            loading={state.loading}
-                            onClick={() => handleAccept(item.id)}
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            size="small"
-                            disabled={state.loading}
-                            className="!bg-[#F1F1F2] !text-black !rounded-full hover:!text-black !border-0 px-2 py-1"
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
+                      ))}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-
+  
             <span className="text-xs text-gray-500 whitespace-nowrap">
               {item.time}
             </span>
           </div>
-        );
-      })}
-    </div>
-  );
-};
+        ))}
+      </div>
+    );
+}
 
-export default AllActivities;
+export default UnreadActivities
