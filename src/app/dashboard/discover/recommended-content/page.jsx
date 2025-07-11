@@ -65,7 +65,7 @@ function CommunityPageContent() {
     <div className="p-3">
       <Link
         href="/dashboard/discover"
-        className="flex gap-2 items-center !text-black text-xs"
+        className="flex gap-2 items-center !text-black text-xs w-20"
       >
         <GoArrowLeft size="1rem" />
         Back

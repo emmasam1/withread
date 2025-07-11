@@ -26,7 +26,7 @@ const Page = () => {
   const [communityPosts, setCommunityPosts] = useState([]);
   const [isLoadingInterests, setIsLoadingInterests] = useState(true);
   const [communities, setCommunities] = useState([]);
-  const [singleCommunity, setSingleCommunities] = useState([]);
+  const [suggested, setSuggested] = useState([]);
   const [loadingCommunities, setLoadingCommunities] = useState(true);
   const [joinLoadingMap, setJoinLoadingMap] = useState({});
   const [likedAnimation, setLikedAnimation] = useState(null);
@@ -132,12 +132,12 @@ const Page = () => {
     const recommendedContent = async () => {
       try {
         const res = await axios.get(
-          `${API_BASE_URL}/api/community/suggestions?page=1&limit=1`,
+          `${API_BASE_URL}/api/post/user/suggested?page=1&limit=1`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         // console.log("recommended res", res);
-        setSingleCommunities(res.data.communities || []);
-        console.log(res.data);
+        setSuggested(res.data.posts || []);
+        // console.log("suggested post", res.data);
       } catch (error) {
         console.error("Error fetching communities:", error);
         toast.error("Failed to load communities");
@@ -273,13 +273,15 @@ const Page = () => {
                       {post.isAnonymous ? (
                         <AvatarPlaceholder text="Anonymous" />
                       ) : post.author?.avatar ? (
-                        <Image
+                        <div className="w-10 h-10">
+                          <Image
                           src={post.author.avatar}
                           alt="user image"
                           width={45}
                           height={45}
-                          className="rounded-full"
+                          className="rounded-full w-full h-full object-cover"
                         />
+                        </div>
                       ) : (
                         <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
                           <AvatarPlaceholder text={initials} />
@@ -334,7 +336,7 @@ const Page = () => {
                         alt="Post image"
                         width={800}
                         height={300}
-                        className="rounded w-full object-cover"
+                        className="rounded w-full object-contain h-96"
                       />
                     </div>
                   )}
@@ -444,35 +446,37 @@ const Page = () => {
                     className="mt-5"
                   />
                 ))
-              : singleCommunity.map((e) => {
-                  const initials = `${e?.creator?.firstName?.[0] || ""}${
-                    e?.creator?.lastName?.[0] || ""
+              : suggested.map((e) => {
+                  const initials = `${e?.author?.firstName?.[0] || ""}${
+                    e?.author?.lastName?.[0] || ""
                   }`.toUpperCase();
 
                   return (
                     <div key={e._id} className="mt-5">
-                      <Image
-                        src={e.avatar}
-                        alt={e.title}
-                        width={600}
-                        height={300}
-                        className="rounded-md object-cover h-50"
-                      />
+                      {e.images?.[0] && (
+                        <Image
+                          src={e.images[0]}
+                          alt="banner"
+                          width={600}
+                          height={300}
+                          className="rounded-md object-contain h-50"
+                        />
+                      )}
 
                       <h1 className="mt-2 text-[.9rem] font-semibold">
-                        {e.name}
+                        {e?.community?.name}
                       </h1>
 
                       <p className="mt-2 text-[.85rem] text-gray-700">
-                        {e.about?.slice(0, 100)}...
+                        {e.content?.slice(0, 100)}...
                       </p>
 
                       <div className="mt-3 flex gap-1 items-center">
                         <div className="rounded-full h-10 w-10">
-                          {e?.creator?.avatar ? (
+                          {e?.community?.avatar ? (
                             <Image
-                              src={e.creator.avatar}
-                              alt={e.creator.firstName}
+                              src={e.community.avatar}
+                              alt="avatar"
                               width={40}
                               height={40}
                               className="h-full w-full rounded-full object-cover"
@@ -501,7 +505,7 @@ const Page = () => {
           <div className="bg-white rounded-md p-3 mt-4">
             <div className="flex justify-between items-center">
               <h1 className="font-semibold">Popular Communities</h1>
-              <Link href="#" className="text-xs">
+              <Link href="/dashboard/discover/popular-communities" className="text-xs">
                 See all
               </Link>
             </div>
