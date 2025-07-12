@@ -135,13 +135,15 @@ const ForYou = () => {
                 {post.isAnonymous ? (
                   <AvatarPlaceholder text="Anonymous" />
                 ) : post.author?.avatar ? (
-                  <Image
+                  <div className="w-10 h-10 rounded-full">
+                        <Image
                     src={post.author.avatar}
                     alt="user image"
                     width={45}
                     height={45}
-                    className="rounded-full"
+                    className="rounded-full object-cover w-full h-full"
                   />
+                  </div>
                 ) : (
                   <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
                     <AvatarPlaceholder text={initials} />
@@ -162,7 +164,7 @@ const ForYou = () => {
                 {!post.isAnonymous && (
                   <Button
                     type="text"
-                    className="!p-0 !text-gray-500 hover:!text-gray-700"
+                    className="!px-3 !bg-black !text-white !rounded-full"
                   >
                     {post.collaborators?.length > 0 ? "Follow Both" : "Follow"}
                   </Button>

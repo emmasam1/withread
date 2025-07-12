@@ -140,6 +140,7 @@ const Page = () => {
                 >
                   {paginatedData.map((item, index) => (
                     <div key={item._id || index}>
+                    <Link href={`/dashboard/discover/popular-communities/${item._id}`}>
                       {item.banner || item.image ? (
                         <Image
                           src={item.banner}
@@ -157,7 +158,7 @@ const Page = () => {
                           className="w-full h-40 object-cover rounded-md"
                         />
                       )}
-                      <p className="mt-2 text-sm">
+                      <p className="mt-2 text-sm text-black">
                         {item?.about
                           ? item.about.length > 100
                             ? item.about.slice(0, 100) + "..."
@@ -176,7 +177,7 @@ const Page = () => {
                             />
                           </div>
                           <div>
-                            <p className="text-xs font-semibold">{item.name}</p>
+                            <p className="text-xs font-semibold text-black">{item.name}</p>
                             <p className="text-xs text-gray-500">
                               {formatMemberCount(item?.members?.length)} Members
                             </p>
@@ -198,6 +199,7 @@ const Page = () => {
                           {joinedIds.includes(item._id) ? "Member" : "Join"}
                         </Button>
                       </div>
+                    </Link>
                     </div>
                   ))}
                 </motion.div>
@@ -250,7 +252,11 @@ const Page = () => {
                         </Button>
                       </div>
                       <p className="mt-3 text-sm">
-                        {item.about || "Join the community!"}
+                       {item?.about
+                          ? item.about.length > 100
+                            ? item.about.slice(0, 100) + "..."
+                            : item.about
+                          : ""}
                       </p>
                     </div>
                   ))}

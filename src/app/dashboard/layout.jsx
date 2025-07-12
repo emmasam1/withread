@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }) {
       label: (
         <a
           href="/dashboard/profile"
-          className="flex !text-[#D9D9D9] items-center gap-3"
+          className="flex items-center gap-3"
         >
           <Image src="/images/profile.png" alt="icon" width={17} height={10} />{" "}
           Profile
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }) {
           target="_blank"
           rel="noopener noreferrer"
           href="https://www.aliyun.com"
-          className="flex !text-[#D9D9D9] items-center gap-3"
+          className="flex items-center gap-3"
         >
           <Image
             src="/images/User_menu.png"
@@ -99,7 +99,7 @@ export default function DashboardLayout({ children }) {
           target="_blank"
           rel="noopener noreferrer"
           href="https://www.luohanacademy.com"
-          className="flex !text-[#D9D9D9] items-center gap-3"
+          className="flex items-center gap-3"
         >
           <Image
             src="/images/Headphones.png"
