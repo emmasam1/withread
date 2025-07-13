@@ -56,6 +56,10 @@ const ForYou = () => {
     }
   };
 
+  const followUder = async (id) => {
+    console.log(id)
+  }
+
   useEffect(() => {
     if ((user && !token) || !API_BASE_URL) return;
     fetchPosts(1);
@@ -163,6 +167,7 @@ const ForYou = () => {
               <div className="flex items-center gap-3">
                 {!post.isAnonymous && (
                   <Button
+                  onClick={()=> followUder(post?._id)}
                     type="text"
                     className="!px-3 !bg-black !text-white !rounded-full"
                   >

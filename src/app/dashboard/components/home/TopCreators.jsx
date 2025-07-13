@@ -30,7 +30,7 @@ const TopCreators = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-lg font-semibold">Top Creators</h1>
-        <Link href="#" className="text-sm text-blue-500 hover:underline">
+        <Link href="/dashboard/top-creators" className="text-sm text-blue-500 hover:underline">
           See All
         </Link>
       </div>

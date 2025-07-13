@@ -336,7 +336,7 @@ const Page = () => {
                         alt="Post image"
                         width={800}
                         height={300}
-                        className="rounded w-full object-contain h-96"
+                        className="rounded w-full object-cover "
                       />
                     </div>
                   )}

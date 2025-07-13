@@ -16,23 +16,28 @@ const TrendingContents = () => {
   const { API_BASE_URL, loading, setLoading } = useApp();
   const [trending, setTrending] = useState([]);
 
-  useEffect(() => {
-    const getTrending = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(
-          `${API_BASE_URL}/api/post/trending?page=1&limit=4`
-        );
-        setTrending(res.data.posts || []);
-        console.log(res.data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    getTrending();
-  }, [API_BASE_URL]);
+ useEffect(() => {
+  const getTrending = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `${API_BASE_URL}/api/post/trending?page=1&limit=4`
+      );
+
+      const sortedPosts = (res.data.posts || []).sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setTrending(sortedPosts);
+      console.log(res.data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  getTrending();
+}, [API_BASE_URL]);
+
 
   return (
     <div className="bg-white rounded-lg p-5 shadow-sm">
