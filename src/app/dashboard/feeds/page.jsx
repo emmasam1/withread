@@ -19,7 +19,7 @@ const items = [
 ];
 
 const ForYou = () => {
-  const { user, API_BASE_URL, token, toggleFollowUser, } = useApp();
+  const { user, API_BASE_URL, token, toggleFollowUser } = useApp();
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -57,7 +57,6 @@ const ForYou = () => {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     if ((user && !token) || !API_BASE_URL) return;
@@ -130,7 +129,7 @@ const ForYou = () => {
           <div
             key={post._id}
             ref={isLastPost ? lastPostRef : null}
-            className="bg-white rounded-lg p-4 shadow-md w-full mx-auto"
+            className=" rounded-lg p-4 shadow-md w-full mx-auto bg-white"
           >
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
@@ -164,20 +163,23 @@ const ForYou = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {!post.isAnonymous && (
-                  <Button
-                    loading={loadingUserId === post?.author?._id}
-                    onClick={() => toggleFollowUser(post?.author?._id)}
-                    type="text"
-                    className="!px-3 !bg-black !text-white !rounded-full"
-                  >
-                    {user?.following?.includes(post?.author?._id)
-                      ? "Following"
-                      : post.collaborators?.length > 0
-                      ? "Follow Both"
-                      : "Follow"}
-                  </Button>
-                )}
+                <div className="flex items-center gap-3">
+                  {!post.isAnonymous && post?.author && (
+                    <Button
+                      loading={loadingUserId === post?.author?._id}
+                      onClick={() => toggleFollowUser(post?.author?._id)}
+                      type="text"
+                      className="!px-3 !bg-black !text-white !rounded-full"
+                    >
+                      {user?.following?.includes(post?.author?._id)
+                        ? "Following"
+                        : post.collaborators?.length > 0
+                        ? "Follow Both"
+                        : "Follow"}
+                    </Button>
+                  )}
+                </div>
+
                 <Dropdown
                   menu={{ items }}
                   trigger={["click"]}
@@ -205,7 +207,7 @@ const ForYou = () => {
                   alt="Post image"
                   width={800}
                   height={300}
-                  className="rounded w-full object-cover"
+                  className="rounded w-full object-cover mb-2 max-h-130 object-top"
                 />
               </div>
             )}
