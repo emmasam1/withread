@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 // Create the context
 const AppContext = createContext();
@@ -67,7 +69,7 @@ export const AppProvider = ({ children }) => {
   }
 
   const isFollowing = user.following?.includes(userId);
-
+  setLoading(true)
   try {
     if (isFollowing) {
       // Unfollow
@@ -97,6 +99,8 @@ export const AppProvider = ({ children }) => {
   } catch (error) {
     console.error(error);
     toast.error(`Failed to ${isFollowing ? "unfollow" : "follow"} user`);
+  }finally{
+    setLoading(false)
   }
 };
 

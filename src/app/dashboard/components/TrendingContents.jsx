@@ -24,11 +24,8 @@ const TrendingContents = () => {
         `${API_BASE_URL}/api/post/trending?page=1&limit=4`
       );
 
-      const sortedPosts = (res.data.posts || []).sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-      setTrending(sortedPosts);
-      console.log(res.data);
+      setTrending(res.data.posts);
+      // console.log(res.data);
     } catch (error) {
       console.log(error);
     } finally {
@@ -44,7 +41,7 @@ const TrendingContents = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-semibold">Trending Contents</h2>
-        <Link href="#" className="text-sm text-blue-500 hover:underline">
+        <Link href="/dashboard/trending-content" className="text-sm text-blue-500 hover:underline">
           See All
         </Link>
       </div>
