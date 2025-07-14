@@ -19,13 +19,16 @@ const items = [
 ];
 
 const ForYou = () => {
-  const { user, API_BASE_URL, token } = useApp();
+  const { user, API_BASE_URL, token, setUser, updateUser } = useApp();
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [likedAnimation, setLikedAnimation] = useState(null);
   const observerRef = useRef();
+  const [followeUser, setFollowUser] = useState(false);
+  const [followingIds, setFollowingIds] = useState([]);
+  const [loadingUserId, setLoadingUserId] = useState(null);
 
   const fetchPosts = async (pageNumber = 1) => {
     if (!API_BASE_URL) return;
@@ -41,6 +44,7 @@ const ForYou = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
+      console.log(res);
       const fetchedPosts = res.data.posts || [];
       if (pageNumber === 1) {
         setPosts(fetchedPosts);
@@ -56,9 +60,59 @@ const ForYou = () => {
     }
   };
 
-  const followUder = async (id) => {
-    console.log(id)
-  }
+  const toggleFollowUser = async (id) => {
+    if (!token) {
+      toast.error("You must be logged in to follow users.");
+      return;
+    }
+
+    const isFollowing = user?.following?.includes(id);
+    setLoadingUserId(id);
+
+    try {
+      if (isFollowing) {
+        // Unfollow - DELETE request
+        const res = await axios.delete(
+          `${API_BASE_URL}/api/user/unfollow/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        toast.success(res?.data?.message || "Unfollowed");
+
+        // Update user context and sessionStorage
+        const updatedUser = {
+          ...user,
+          following: user.following.filter((uid) => uid !== id),
+        };
+        setUser(updatedUser);
+      } else {
+        // Follow - POST request
+        const res = await axios.post(
+          `${API_BASE_URL}/api/user/follow/${id}`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        toast.success(res?.data?.message || "Followed");
+
+        // Update user context and sessionStorage
+        const updatedUser = {
+          ...user,
+          following: [...user.following, id],
+        };
+        setUser(updatedUser);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        `Error trying to ${isFollowing ? "unfollow" : "follow"} user.`
+      );
+    } finally {
+      setLoadingUserId(null);
+    }
+  };
 
   useEffect(() => {
     if ((user && !token) || !API_BASE_URL) return;
@@ -140,13 +194,13 @@ const ForYou = () => {
                   <AvatarPlaceholder text="Anonymous" />
                 ) : post.author?.avatar ? (
                   <div className="w-10 h-10 rounded-full">
-                        <Image
-                    src={post.author.avatar}
-                    alt="user image"
-                    width={45}
-                    height={45}
-                    className="rounded-full object-cover w-full h-full"
-                  />
+                    <Image
+                      src={post.author.avatar}
+                      alt="user image"
+                      width={45}
+                      height={45}
+                      className="rounded-full object-cover w-full h-full"
+                    />
                   </div>
                 ) : (
                   <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
@@ -167,11 +221,16 @@ const ForYou = () => {
               <div className="flex items-center gap-3">
                 {!post.isAnonymous && (
                   <Button
-                  onClick={()=> followUder(post?._id)}
+                    loading={loadingUserId === post?.author?._id}
+                    onClick={() => toggleFollowUser(post?.author?._id)}
                     type="text"
                     className="!px-3 !bg-black !text-white !rounded-full"
                   >
-                    {post.collaborators?.length > 0 ? "Follow Both" : "Follow"}
+                    {user?.following?.includes(post?.author?._id)
+                      ? "Following"
+                      : post.collaborators?.length > 0
+                      ? "Follow Both"
+                      : "Follow"}
                   </Button>
                 )}
                 <Dropdown

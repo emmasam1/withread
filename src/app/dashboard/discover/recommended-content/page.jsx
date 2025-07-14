@@ -37,6 +37,7 @@ function CommunityPageContent() {
         );
         setPosts(res.data?.posts || []);
         setTotalPages(res.data?.totalPages || 1);
+        console.log(res)
       } catch (error) {
         toast.error("Failed to fetch content.");
         console.error(error);
