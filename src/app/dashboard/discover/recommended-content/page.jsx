@@ -13,7 +13,7 @@ import Image from "next/image";
 const { Meta } = Card;
 
 function CommunityPageContent() {
-  const { API_BASE_URL, setLoading, loading, token } = useApp();
+  const { API_BASE_URL, setLoading, loading, token, toggleFollowUser } = useApp();
   const [posts, setPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 

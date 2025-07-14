@@ -164,20 +164,22 @@ const ForYou = () => {
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-3">
-                  {!post.isAnonymous && post?.author && (
-                    <Button
-                      loading={loadingUserId === post?.author?._id}
-                      onClick={() => toggleFollowUser(post?.author?._id)}
-                      type="text"
-                      className="!px-3 !bg-black !text-white !rounded-full"
-                    >
-                      {user?.following?.includes(post?.author?._id)
-                        ? "Following"
-                        : post.collaborators?.length > 0
-                        ? "Follow Both"
-                        : "Follow"}
-                    </Button>
-                  )}
+                  {!post.isAnonymous &&
+                    post?.author &&
+                    post.author._id !== user?._id && (
+                      <Button
+                        loading={loadingUserId === post?.author?._id}
+                        onClick={() => toggleFollowUser(post?.author?._id)}
+                        type="text"
+                        className="!px-3 !bg-black !text-white !rounded-full"
+                      >
+                        {user?.following?.includes(post?.author?._id)
+                          ? "Following"
+                          : post.collaborators?.length > 0
+                          ? "Follow Both"
+                          : "Follow"}
+                      </Button>
+                    )}
                 </div>
 
                 <Dropdown
