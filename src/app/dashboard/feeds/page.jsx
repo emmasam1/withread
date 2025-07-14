@@ -116,6 +116,13 @@ const ForYou = () => {
     <h1 className="font-semibold text-gray-400">{text}</h1>
   );
 
+const handleFollowToggle = async (userId) => {
+  setLoadingUserId(userId);         // 👈 local loading state
+  await toggleFollowUser(userId);   // 👈 this still calls the one from context
+  setLoadingUserId(null);
+};
+
+
   return (
     <div className="space-y-8 w-full">
       {posts.map((post, index) => {
@@ -169,7 +176,7 @@ const ForYou = () => {
                     post.author._id !== user?._id && (
                       <Button
                         loading={loadingUserId === post?.author?._id}
-                        onClick={() => toggleFollowUser(post?.author?._id)}
+                        onClick={() => handleFollowToggle(post?.author?._id)}
                         type="text"
                         className="!px-3 !bg-black !text-white !rounded-full"
                       >

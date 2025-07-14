@@ -63,47 +63,47 @@ export const AppProvider = ({ children }) => {
 
   //toggle follow across the application
   const toggleFollowUser = async (userId) => {
-  if (!token || !user) {
-    toast.error("You must be logged in to follow users.");
-    return;
-  }
-
-  const isFollowing = user.following?.includes(userId);
-  setLoading(true)
-  try {
-    if (isFollowing) {
-      // Unfollow
-      const res = await axios.delete(`${API_BASE_URL}/api/user/unfollow/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      updateUser({
-        following: user.following.filter((id) => id !== userId),
-      });
-
-      toast.success(res.data?.message || "Unfollowed");
-    } else {
-      // Follow
-      const res = await axios.post(
-        `${API_BASE_URL}/api/user/follow/${userId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      updateUser({
-        following: [...(user.following || []), userId],
-      });
-
-      toast.success(res.data?.message || "Followed");
+    if (!token || !user) {
+      toast.error("You must be logged in to follow users.");
+      return;
     }
-  } catch (error) {
-    console.error(error);
-    toast.error(`Failed to ${isFollowing ? "unfollow" : "follow"} user`);
-  }finally{
-    setLoading(false)
-  }
-};
 
+    const isFollowing = user.following?.includes(userId);
+
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const res = await axios.delete(
+          `${API_BASE_URL}/api/user/unfollow/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        updateUser({
+          following: user.following.filter((id) => id !== userId),
+        });
+
+        toast.success(res.data?.message || "Unfollowed");
+      } else {
+        // Follow
+        const res = await axios.post(
+          `${API_BASE_URL}/api/user/follow/${userId}`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        updateUser({
+          following: [...(user.following || []), userId],
+        });
+
+        toast.success(res.data?.message || "Followed");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(`Failed to ${isFollowing ? "unfollow" : "follow"} user`);
+    }
+  };
 
   // Set token and persist to sessionStorage
   const setToken = (tokenValue) => {
