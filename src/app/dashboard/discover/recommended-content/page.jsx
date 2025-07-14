@@ -13,7 +13,7 @@ import Image from "next/image";
 const { Meta } = Card;
 
 function CommunityPageContent() {
-  const { API_BASE_URL, setLoading, loading, token, toggleFollowUser } = useApp();
+  const { API_BASE_URL, setLoading, loading, token, user } = useApp();
   const [posts, setPosts] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -143,7 +143,7 @@ function CommunityPageContent() {
                               {post?.author?.firstName} {post?.author?.lastName}
                             </span>
                             <Image src="/images/dot.png" alt="dot" width={3} height={3} />
-                            <span className="text-gray-300 text-xs">Follow</span>
+                            <span className="text-gray-300 text-xs">{user?.following?.includes(post?.author?._id) ? "Following" : "Follow"}</span>
                           </div>
                         </div>
                           <span className="text-gray-400">
