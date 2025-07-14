@@ -19,15 +19,13 @@ const items = [
 ];
 
 const ForYou = () => {
-  const { user, API_BASE_URL, token, setUser, updateUser } = useApp();
+  const { user, API_BASE_URL, token, toggleFollowUser, } = useApp();
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [likedAnimation, setLikedAnimation] = useState(null);
   const observerRef = useRef();
-  const [followeUser, setFollowUser] = useState(false);
-  const [followingIds, setFollowingIds] = useState([]);
   const [loadingUserId, setLoadingUserId] = useState(null);
 
   const fetchPosts = async (pageNumber = 1) => {
@@ -60,59 +58,6 @@ const ForYou = () => {
     }
   };
 
-  const toggleFollowUser = async (id) => {
-    if (!token) {
-      toast.error("You must be logged in to follow users.");
-      return;
-    }
-
-    const isFollowing = user?.following?.includes(id);
-    setLoadingUserId(id);
-
-    try {
-      if (isFollowing) {
-        // Unfollow - DELETE request
-        const res = await axios.delete(
-          `${API_BASE_URL}/api/user/unfollow/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        toast.success(res?.data?.message || "Unfollowed");
-
-        // Update user context and sessionStorage
-        const updatedUser = {
-          ...user,
-          following: user.following.filter((uid) => uid !== id),
-        };
-        setUser(updatedUser);
-      } else {
-        // Follow - POST request
-        const res = await axios.post(
-          `${API_BASE_URL}/api/user/follow/${id}`,
-          {},
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        toast.success(res?.data?.message || "Followed");
-
-        // Update user context and sessionStorage
-        const updatedUser = {
-          ...user,
-          following: [...user.following, id],
-        };
-        setUser(updatedUser);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        `Error trying to ${isFollowing ? "unfollow" : "follow"} user.`
-      );
-    } finally {
-      setLoadingUserId(null);
-    }
-  };
 
   useEffect(() => {
     if ((user && !token) || !API_BASE_URL) return;

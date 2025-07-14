@@ -20,7 +20,15 @@ const items = [
 ];
 
 const Page = () => {
-  const { API_BASE_URL, setLoading, loading, token, user, setUser } = useApp();
+  const {
+    API_BASE_URL,
+    setLoading,
+    loading,
+    token,
+    user,
+    setUser,
+    toggleFollowUser,
+  } = useApp();
   const [interestsList, setInterestsList] = useState([]);
   const [selectedInterestId, setSelectedInterestId] = useState(null);
   const [communityPosts, setCommunityPosts] = useState([]);
@@ -31,6 +39,7 @@ const Page = () => {
   const [joinLoadingMap, setJoinLoadingMap] = useState({});
   const [likedAnimation, setLikedAnimation] = useState(null);
   const router = useRouter();
+  const [loadingUserId, setLoadingUserId] = useState(null);
 
   useEffect(() => {
     const fetchInterests = async () => {
@@ -275,12 +284,12 @@ const Page = () => {
                       ) : post.author?.avatar ? (
                         <div className="w-10 h-10">
                           <Image
-                          src={post.author.avatar}
-                          alt="user image"
-                          width={45}
-                          height={45}
-                          className="rounded-full w-full h-full object-cover"
-                        />
+                            src={post.author.avatar}
+                            alt="user image"
+                            width={45}
+                            height={45}
+                            className="rounded-full w-full h-full object-cover"
+                          />
                         </div>
                       ) : (
                         <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
@@ -302,13 +311,26 @@ const Page = () => {
                       {!post.isAnonymous && (
                         <Button
                           type="text"
-                          className="!px-3 !bg-black !text-white !rounded-full"
+                          loading={loadingUserId === post.author._id}
+                          onClick={async () => {
+                            setLoadingUserId(post.author._id);
+                            await toggleFollowUser(post.author._id);
+                            setLoadingUserId(null);
+                          }}
+                          className={`!px-3 !rounded-full ${
+                            user?.following?.includes(post.author._id)
+                              ? "!px-3 !bg-black !text-white !rounded-full"
+                              : "!px-3 !bg-black !text-white !rounded-full"
+                          }`}
                         >
-                          {post.collaborators?.length > 0
+                          {user?.following?.includes(post.author._id)
+                            ? "Following"
+                            : post.collaborators?.length > 0
                             ? "Follow Both"
                             : "Follow"}
                         </Button>
                       )}
+
                       <Dropdown
                         menu={{ items }}
                         trigger={["click"]}
@@ -505,7 +527,10 @@ const Page = () => {
           <div className="bg-white rounded-md p-3 mt-4">
             <div className="flex justify-between items-center">
               <h1 className="font-semibold">Popular Communities</h1>
-              <Link href="/dashboard/discover/popular-communities" className="text-xs">
+              <Link
+                href="/dashboard/discover/popular-communities"
+                className="text-xs"
+              >
                 See all
               </Link>
             </div>
