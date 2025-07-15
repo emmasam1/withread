@@ -334,13 +334,15 @@ export default function DashboardLayout({ children }) {
             <Dropdown menu={{ items }} placement="Right" trigger={["click"]}>
               <div className="flex items-center gap-2 cursor-pointer">
                 {user?.avatar ? (
-                  <Image
+                  <div className="rounded-full w-12 h-12">
+                    <Image
                     src={user?.avatar} // fallback in case avatar is null
                     alt="user image"
                     width={45}
                     height={45}
-                    className="rounded-full"
+                    className="rounded-full h-full w-full object-cover"
                   />
+                  </div>
                 ) : (
                   <div className="!bg-[#F6F6F6]  rounded-full p-2 w-12 h-12 flex justify-center items-center">
                     <h1 className="font-semibold text-gray-400">{initials}</h1>
@@ -352,7 +354,7 @@ export default function DashboardLayout({ children }) {
                       collapsed ? "hidden" : "block"
                     } font-semibold`}
                   >
-                    {user?.firstName} {user?.lastName}
+                    {user?.firstName} 
                   </h1>
 
                   <p></p>

@@ -80,13 +80,15 @@ const Page = () => {
                 <div className="bg-white rounded-lg p-3 mb-6">
                   <div className="flex items-center gap-5">
                     {user?.avatar ? (
-                      <Image
+                      <div className="rounded-full w-12 h-12">
+                        <Image
                         src={user?.avatar}
                         alt="user image"
                         width={45}
                         height={45}
-                        className="rounded-full"
+                        className="rounded-full h-full w-full object-cover"
                       />
+                      </div>
                     ) : (
                       <div className="!bg-[#F6F6F6]  rounded-full p-2 w-12 h-12 flex justify-center items-center">
                         <h1 className="font-semibold text-gray-400">
