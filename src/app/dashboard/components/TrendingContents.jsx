@@ -148,7 +148,7 @@ const TrendingContents = () => {
                     alt="Post"
                     width={100}
                     height={80}
-                    className="rounded object-cover h-full"
+                    className="rounded-lg object-cover h-full"
                   />
                 </div>
               </div>
