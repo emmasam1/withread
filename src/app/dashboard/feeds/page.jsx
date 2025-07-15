@@ -42,7 +42,7 @@ const ForYou = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      console.log(res);
+      // console.log(res);
       const fetchedPosts = res.data.posts || [];
       if (pageNumber === 1) {
         setPosts(fetchedPosts);

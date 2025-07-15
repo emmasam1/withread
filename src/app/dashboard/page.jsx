@@ -12,14 +12,14 @@ import Link from "next/link";
 import TrendingContents from "./components/TrendingContents";
 import TopCreators from "./components/home/TopCreators";
 import ForYou from "./feeds/page";
+// import Featured from "./featured/page";
+import Following from "./following/page";
 
 // const ForYou = () => <div className="p-4 bg-white shadow rounded">This is For You</div>;
 const Featured = () => (
   <div className="p-4 bg-white shadow rounded">This is Featured</div>
 );
-const Following = () => (
-  <div className="p-4 bg-white shadow rounded">This is Following</div>
-);
+
 
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
