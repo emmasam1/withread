@@ -20,6 +20,7 @@ const ForYou = () => {
   const observerRef = useRef();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [ready, setReady] = useState(false);
 
   const showModal = (post) => {
     setSelectedPost(post);
@@ -37,8 +38,39 @@ const ForYou = () => {
     setSelectedPost(null);
   };
 
+// const fetchPosts = async (pageNumber = 1, reset = false) => {
+//   if (!API_BASE_URL) return;
+
+//   try {
+//     if (reset) setLoading(true);
+
+//     const endpoint = token
+//       ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
+//       : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
+
+//     const res = await axios.get(endpoint, {
+//       headers: token ? { Authorization: `Bearer ${token}` } : {},
+//     });
+
+//     const fetchedPosts = res.data.posts || [];
+
+//     setPosts((prev) =>
+//       pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
+//     );
+
+//     setHasMore(pageNumber < res.data.totalPages);
+//   } catch (error) {
+//     console.error("Error fetching posts:", error);
+//   } finally {
+//     if (reset) setLoading(false);
+//   }
+// };
+
 const fetchPosts = async (pageNumber = 1, reset = false) => {
   if (!API_BASE_URL) return;
+
+  const controller = new AbortController();
+  const signal = controller.signal;
 
   try {
     if (reset) setLoading(true);
@@ -49,21 +81,28 @@ const fetchPosts = async (pageNumber = 1, reset = false) => {
 
     const res = await axios.get(endpoint, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal,
     });
 
     const fetchedPosts = res.data.posts || [];
-
     setPosts((prev) =>
       pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
     );
 
     setHasMore(pageNumber < res.data.totalPages);
   } catch (error) {
-    console.error("Error fetching posts:", error);
+    if (axios.isCancel(error)) {
+      console.log("Previous fetch aborted");
+    } else {
+      console.error("Error fetching posts:", error);
+    }
   } finally {
     if (reset) setLoading(false);
   }
+
+  return () => controller.abort();
 };
+
 
 const notInterested = async (id) => {
   if (!id) return;
@@ -79,32 +118,33 @@ const notInterested = async (id) => {
 };
 
 
-//   const notInterested = async (id) => {
-//   if (!id) return;
-
-//   // ✅ Optimistic UI update
-//   setPosts((prev) => prev.filter((post) => post._id !== id));
-
-//   try {
-//     await axios.put(
-//       `${API_BASE_URL}/api/preference/${id}/not-interested`,
-//       {},
-//       {
-//         headers: { Authorization: `Bearer ${token}` },
-//       }
-//     );
-
-//     toast.success("Post marked as not interested.");
-//   } catch (error) {
-//     console.error("Error marking post as not interested:", error);
-//     toast.error("Failed to mark post as not interested.");
-//   }
-// };
+const removePost = async (id) => {
+  if (!id) return;
+  try {
+   const res = await axios.put(`${API_BASE_URL}/api/preference/${id}/remove`, {} , {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    toast.success("Post removed successfully.");
+    console.log(res)
+    setPosts((prev) => prev.filter((post) => post._id !== id)); // Optimistic update
+  } catch (error) {
+    console.error("Error removing post:", error);
+    toast.error("Failed to remove post.");
+  }
+}
 
 useEffect(() => {
   if (!API_BASE_URL) return;
-  fetchPosts(1, true);
+  if (token === undefined) return; // Wait until token state is known
+
+  // Clear posts immediately when switching auth state
+  setPosts([]);
+  setPage(1);
+
+  fetchPosts(1, true); // Fetch correct feed for current state
 }, [API_BASE_URL, token]);
+
+
 
 const lastPostRef = useCallback((node) => {
   if (loading) return;
@@ -260,7 +300,7 @@ const lastPostRef = useCallback((node) => {
 
         const dropdownItems = [
           { label: "Not interested in this post", key: "0", onClick: () => notInterested(post._id) },
-          { label: "Remove this post from my feed", key: "1" },
+          { label: "Remove this post from my feed", key: "1", onClick: () => removePost(post._id) },
           { type: "divider" },
           { label: "Mute", key: "2" },
           {
