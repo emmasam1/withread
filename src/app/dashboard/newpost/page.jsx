@@ -148,34 +148,80 @@ const Page = () => {
   };
 
   const addPost = async () => {
-    if (!title || !content) return toast.warning("Title and content are required.");
-    if (!selectedCategoryId) return toast.warning("Select a category.");
+  if (!title || !content) return toast.warning("Title and content are required.");
+  if (!selectedCategoryId) return toast.warning("Select a category.");
 
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
-    formData.append("title", stripHtml(title));
-    formData.append("content", stripHtml(content));
-    formData.append("link", link);
-    formData.append("emojis", emojis);
-    formData.append("categories", JSON.stringify([selectedCategoryId]));
-    formData.append("tags", tags);
-    formData.append("collaborators", collaborators);
-    files.forEach((file) => formData.append("images", file));
+  setLoading(true);
+  const formData = new FormData();
+  formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+  formData.append("title", stripHtml(title));
+  formData.append("content", stripHtml(content));
+  formData.append("link", link);
+  formData.append("emojis", emojis);
+  formData.append("categories", JSON.stringify([selectedCategoryId]));
+  formData.append("tags", tags);
+  formData.append("collaborators", collaborators);
 
-    try {
-      const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
-      });
-      toast.success("Post submitted successfully!");
-      setTitle(""); setContent(""); setLink(""); setEmojis("");
-      setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
-    } catch (error) {
-      toast.error("Something went wrong while submitting the post.");
-    } finally {
-      setLoading(false);
+  // ✅ Append images properly
+  files.forEach((file) => {
+    if (file.originFileObj) {
+      formData.append("images", file.originFileObj);
     }
-  };
+  });
+
+  try {
+    const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+    });
+    toast.success("Post submitted successfully!");
+    // console.log(res);
+    setTitle("");
+    setContent("");
+    setLink("");
+    setEmojis("");
+    setSelectedCategoryId("");
+    setTags("");
+    setCollaborators("");
+    setFiles([]);
+  } catch (error) {
+    toast.error("Something went wrong while submitting the post.");
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  // const addPost = async () => {
+  //   if (!title || !content) return toast.warning("Title and content are required.");
+  //   if (!selectedCategoryId) return toast.warning("Select a category.");
+
+  //   setLoading(true);
+  //   const formData = new FormData();
+  //   formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+  //   formData.append("title", stripHtml(title));
+  //   formData.append("content", stripHtml(content));
+  //   formData.append("link", link);
+  //   formData.append("emojis", emojis);
+  //   formData.append("categories", JSON.stringify([selectedCategoryId]));
+  //   formData.append("tags", tags);
+  //   formData.append("collaborators", collaborators);
+  //   files.forEach((file) => formData.append("images", file));
+
+  //   try {
+  //     const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
+  //       headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+  //     });
+  //     console.log(res)
+  //     toast.success("Post submitted successfully!");
+  //     setTitle(""); setContent(""); setLink(""); setEmojis("");
+  //     setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
+  //   } catch (error) {
+  //     toast.error("Something went wrong while submitting the post.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const saveEditedPostToDraft = async () => {
   if (!title || !content) return toast.warning("Title and content are required.");
@@ -213,7 +259,6 @@ const Page = () => {
         "Content-Type": "multipart/form-data",
       },
     });
-
     toast.success(res.data.message || "Draft updated successfully!");
      setTitle(""); setContent(""); setLink(""); setEmojis("");
       setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
@@ -275,38 +320,6 @@ const Page = () => {
     setDraftLoading(false);
   }
 };
-
-
-  // const saveToDraft = async () => {
-  //   if (!title || !content) return toast.warning("Title and content are required.");
-  //   if (!selectedCategoryId) return toast.warning("Select a category.");
-
-  //   setDraftLoading(true);
-  //   const formData = new FormData();
-  //   formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
-  //   formData.append("status", "draft");
-  //   formData.append("title", stripHtml(title));
-  //   formData.append("content", stripHtml(content));
-  //   formData.append("link", link);
-  //   formData.append("emojis", emojis);
-  //   formData.append("categories", JSON.stringify([selectedCategoryId]));
-  //   formData.append("tags", tags);
-  //   formData.append("collaborators", collaborators);
-  //   files.forEach((file) => formData.append("images", file));
-
-  //   try {
-  //     const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
-  //       headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
-  //     });
-  //     toast.success(res.data.message || "Post saved to draft successfully!");
-  //     setTitle(""); setContent(""); setLink(""); setEmojis("");
-  //     setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
-  //   } catch (error) {
-  //     toast.error("Something went wrong while saving the draft.");
-  //   } finally {
-  //     setDraftLoading(false);
-  //   }
-  // };
 
   return (
     <div className="p-4">

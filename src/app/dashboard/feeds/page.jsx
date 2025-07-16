@@ -37,9 +37,37 @@ const ForYou = () => {
     setSelectedPost(null);
   };
 
-  const fetchPosts = async (pageNumber = 1) => {
-    if (!API_BASE_URL) return;
+  // const fetchPosts = async (pageNumber = 1) => {
+  //   if (!API_BASE_URL) return;
 
+  //   try {
+  //     setLoading(true);
+  //     const endpoint =
+  //       user && token
+  //         ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
+  //         : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
+
+  //     const res = await axios.get(endpoint, {
+  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //     });
+
+  //     const fetchedPosts = res.data.posts || [];
+  //     if (pageNumber === 1) {
+  //       setPosts(fetchedPosts);
+  //     } else {
+  //       setPosts((prev) => [...prev, ...fetchedPosts]);
+  //     }
+
+  //     setHasMore(pageNumber < res.data.totalPages);
+  //   } catch (error) {
+  //     console.error("Error fetching posts:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const fetchPosts = useCallback(
+  async (pageNumber = 1, reset = false) => {
     try {
       setLoading(true);
       const endpoint =
@@ -52,20 +80,19 @@ const ForYou = () => {
       });
 
       const fetchedPosts = res.data.posts || [];
-      if (pageNumber === 1) {
-        setPosts(fetchedPosts);
-      } else {
-        setPosts((prev) => [...prev, ...fetchedPosts]);
-      }
-
+      
+      setPosts(reset ? fetchedPosts : (prev) => [...prev, ...fetchedPosts]); // ✅ Reset if requested
       setHasMore(pageNumber < res.data.totalPages);
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
       setLoading(false);
     }
-  };
+  },
+  [API_BASE_URL, token, user]
+);
 
+  
   useEffect(() => {
     if ((user && !token) || !API_BASE_URL) return;
     fetchPosts(1);
@@ -129,6 +156,32 @@ const ForYou = () => {
   const AvatarPlaceholder = ({ text }) => (
     <h1 className="font-semibold text-gray-400">{text}</h1>
   );
+
+const notInterested = async (id) => {
+  if (!id) return;
+
+  // ✅ Optimistic UI update
+  setPosts((prev) => prev.filter((post) => post._id !== id));
+
+  try {
+    await axios.put(
+      `${API_BASE_URL}/api/preference/${id}/not-interested`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    toast.success("Post marked as not interested.");
+  } catch (error) {
+    console.error("Error marking post as not interested:", error);
+    toast.error("Failed to mark post as not interested.");
+  }
+};
+
+
+
+
 
   return (
     <div className="space-y-8 w-full">
@@ -202,7 +255,11 @@ const ForYou = () => {
         const isLiked = post.likes.includes(user?._id);
 
         const dropdownItems = [
-          { label: "Not interested in this post", key: "0" },
+          {
+            label: "Not interested in this post",
+            key: "0",
+            onClick: () => notInterested(post._id),
+          },
           { label: "Remove this post from my feed", key: "1" },
           { type: "divider" },
           { label: "Mute", key: "2" },
@@ -270,18 +327,20 @@ const ForYou = () => {
                     </Button>
                   )}
 
-                <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
-                  <a onClick={(e) => e.preventDefault()}>
-                    <Space>
-                      <Image
-                        src="/images/Frame.png"
-                        alt="More options"
-                        width={18}
-                        height={12}
-                      />
-                    </Space>
-                  </a>
-                </Dropdown>
+                {user ? (
+                  <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
+                    <a onClick={(e) => e.preventDefault()}>
+                      <Space>
+                        <Image
+                          src="/images/Frame.png"
+                          alt="More options"
+                          width={18}
+                          height={12}
+                        />
+                      </Space>
+                    </a>
+                  </Dropdown>
+                ) : null}
               </div>
             </div>
 
