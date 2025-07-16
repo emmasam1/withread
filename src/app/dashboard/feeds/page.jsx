@@ -20,17 +20,11 @@ const ForYou = () => {
   const observerRef = useRef();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [ready, setReady] = useState(false);
 
   const showModal = (post) => {
     setSelectedPost(post);
     setIsModalOpen(true);
     console.log(post);
-  };
-
-  const handleOk = () => {
-    setIsModalOpen(false);
-    setSelectedPost(null);
   };
 
   const handleCancel = () => {
