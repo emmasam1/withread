@@ -5,7 +5,7 @@ import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useApp } from "@/app/context/context";
 import Image from "next/image";
 
-const General = () => {
+const Account = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isContinue, setIsContinue] = useState(false);
   const [modalTitle, setModalTitle] = useState("Verify To Change Password");
@@ -49,7 +49,7 @@ const General = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg space-y-8">
+    <div className="p-3 space-y-8">
       {/* Modal */}
       <Modal
         title={modalTitle}
@@ -217,4 +217,4 @@ const General = () => {
   );
 };
 
-export default General;
+export default Account;

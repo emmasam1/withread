@@ -1,15 +1,17 @@
 "use client";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import General from "../components/General";
+import Account from "../components/Account";
+import Profile from "../components/Profile";
+import Privacy from "../components/Privacy";
 
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
 
   const tabs = [
-    { key: "1", label: "About", content: <General /> },
-    { key: "2", label: "Profile", content: "This is your Profile info." },
-    { key: "3", label: "Privacy", content: "Privacy settings go here." },
+    { key: "1", label: "About", content: <Account /> },
+    { key: "2", label: "Profile", content: <Profile />},
+    { key: "3", label: "Privacy", content: <Privacy /> },
     { key: "4", label: "Notification", content: "Notification preferences." },
     { key: "5", label: "Help & Support", content: "Help & Support content." },
   ];

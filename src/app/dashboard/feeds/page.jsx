@@ -20,11 +20,11 @@ const ForYou = () => {
   const observerRef = useRef();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [blockUserId, seBlockUserId] = useState(false);
 
   const showModal = (post) => {
     setSelectedPost(post);
     setIsModalOpen(true);
-    console.log(post);
   };
 
   const handleCancel = () => {
@@ -32,130 +32,135 @@ const ForYou = () => {
     setSelectedPost(null);
   };
 
-// const fetchPosts = async (pageNumber = 1, reset = false) => {
-//   if (!API_BASE_URL) return;
+  // const fetchPosts = async (pageNumber = 1, reset = false) => {
+  //   if (!API_BASE_URL) return;
 
-//   try {
-//     if (reset) setLoading(true);
+  //   try {
+  //     if (reset) setLoading(true);
 
-//     const endpoint = token
-//       ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
-//       : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
+  //     const endpoint = token
+  //       ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
+  //       : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
 
-//     const res = await axios.get(endpoint, {
-//       headers: token ? { Authorization: `Bearer ${token}` } : {},
-//     });
+  //     const res = await axios.get(endpoint, {
+  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
+  //     });
 
-//     const fetchedPosts = res.data.posts || [];
+  //     const fetchedPosts = res.data.posts || [];
 
-//     setPosts((prev) =>
-//       pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
-//     );
+  //     setPosts((prev) =>
+  //       pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
+  //     );
 
-//     setHasMore(pageNumber < res.data.totalPages);
-//   } catch (error) {
-//     console.error("Error fetching posts:", error);
-//   } finally {
-//     if (reset) setLoading(false);
-//   }
-// };
+  //     setHasMore(pageNumber < res.data.totalPages);
+  //   } catch (error) {
+  //     console.error("Error fetching posts:", error);
+  //   } finally {
+  //     if (reset) setLoading(false);
+  //   }
+  // };
 
-const fetchPosts = async (pageNumber = 1, reset = false) => {
-  if (!API_BASE_URL) return;
+  const fetchPosts = async (pageNumber = 1, reset = false) => {
+    if (!API_BASE_URL) return;
 
-  const controller = new AbortController();
-  const signal = controller.signal;
+    const controller = new AbortController();
+    const signal = controller.signal;
 
-  try {
-    if (reset) setLoading(true);
+    try {
+      if (reset) setLoading(true);
 
-    const endpoint = token
-      ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
-      : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
+      const endpoint = token
+        ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
+        : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
 
-    const res = await axios.get(endpoint, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      signal,
-    });
+      const res = await axios.get(endpoint, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal,
+      });
 
-    const fetchedPosts = res.data.posts || [];
-    setPosts((prev) =>
-      pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
-    );
+      const fetchedPosts = res.data.posts || [];
+      setPosts((prev) =>
+        pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
+      );
 
-    setHasMore(pageNumber < res.data.totalPages);
-  } catch (error) {
-    if (axios.isCancel(error)) {
-      console.log("Previous fetch aborted");
-    } else {
-      console.error("Error fetching posts:", error);
+      setHasMore(pageNumber < res.data.totalPages);
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log("Previous fetch aborted");
+      } else {
+        console.error("Error fetching posts:", error);
+      }
+    } finally {
+      if (reset) setLoading(false);
     }
-  } finally {
-    if (reset) setLoading(false);
-  }
 
-  return () => controller.abort();
-};
+    return () => controller.abort();
+  };
 
-
-const notInterested = async (id) => {
-  if (!id) return;
-  try {
-    await axios.put(`${API_BASE_URL}/api/preference/${id}/not-interested`, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    toast.success("Post removed.");
-    setPosts((prev) => prev.filter((post) => post._id !== id)); // ✅ Optimistic update
-  } catch (error) {
-    toast.error("Failed to remove post.");
-  }
-};
-
-
-const removePost = async (id) => {
-  if (!id) return;
-  try {
-   const res = await axios.put(`${API_BASE_URL}/api/preference/${id}/remove`, {} , {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    toast.success("Post removed successfully.");
-    console.log(res)
-    setPosts((prev) => prev.filter((post) => post._id !== id)); // Optimistic update
-  } catch (error) {
-    console.error("Error removing post:", error);
-    toast.error("Failed to remove post.");
-  }
-}
-
-useEffect(() => {
-  if (!API_BASE_URL) return;
-  if (token === undefined) return; // Wait until token state is known
-
-  // Clear posts immediately when switching auth state
-  setPosts([]);
-  setPage(1);
-
-  fetchPosts(1, true); // Fetch correct feed for current state
-}, [API_BASE_URL, token]);
-
-
-
-const lastPostRef = useCallback((node) => {
-  if (loading) return;
-  if (observerRef.current) observerRef.current.disconnect();
-
-  observerRef.current = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && hasMore) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchPosts(nextPage);
+  const notInterested = async (id) => {
+    if (!id) return;
+    try {
+      await axios.put(
+        `${API_BASE_URL}/api/preference/${id}/not-interested`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Post removed.");
+      setPosts((prev) => prev.filter((post) => post._id !== id)); // ✅ Optimistic update
+    } catch (error) {
+      toast.error("Failed to remove post.");
     }
-  });
+  };
 
-  if (node) observerRef.current.observe(node);
-}, [loading, hasMore, page]);
+  const removePost = async (id) => {
+    if (!id) return;
+    try {
+      const res = await axios.put(
+        `${API_BASE_URL}/api/preference/${id}/remove`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Post removed successfully.");
+      console.log(res);
+      setPosts((prev) => prev.filter((post) => post._id !== id)); // Optimistic update
+    } catch (error) {
+      console.error("Error removing post:", error);
+      toast.error("Failed to remove post.");
+    }
+  };
 
+  useEffect(() => {
+    if (!API_BASE_URL) return;
+    if (token === undefined) return; // Wait until token state is known
 
+    // Clear posts immediately when switching auth state
+    setPosts([]);
+    setPage(1);
+
+    fetchPosts(1, true); // Fetch correct feed for current state
+  }, [API_BASE_URL, token]);
+
+  const lastPostRef = useCallback(
+    (node) => {
+      if (loading) return;
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchPosts(nextPage);
+        }
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [loading, hasMore, page]
+  );
 
   // useEffect(() => {
   //   if ((user && !token) || !API_BASE_URL) return;
@@ -221,6 +226,31 @@ const lastPostRef = useCallback((node) => {
     <h1 className="font-semibold text-gray-400">{text}</h1>
   );
 
+  const blockUser = async () => {
+    const id = selectedPost?.author?._id;
+    if (!id) return;
+    try {
+      seBlockUserId(true);
+      const res = await axios.post(
+        `${API_BASE_URL}/api/user/block/${id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log(res);
+      toast.success("User blocked successfully.");
+      setIsModalOpen(false);
+      fetchPosts(1, true); // Refresh posts after blocking
+      setSelectedPost(null);
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      toast.error("Failed to block user.");
+    } finally {
+      seBlockUserId(false);
+    }
+  };
+
   return (
     <div className="space-y-8 w-full">
       {/* Modal */}
@@ -273,10 +303,9 @@ const lastPostRef = useCallback((node) => {
               <Button
                 className="!bg-[#FF9E80] !rounded-full !text-white !px-10 !py-5 !border-0 hover:!text-white"
                 onClick={() => {
-                  // TODO: Add block API logic here
-                  console.log("Blocking", selectedPost?.author?._id);
-                  setIsModalOpen(false);
+                  blockUser(selectedPost.author?._id);
                 }}
+                loading={blockUserId}
               >
                 Block
               </Button>
@@ -293,8 +322,16 @@ const lastPostRef = useCallback((node) => {
         const isLiked = post.likes.includes(user?._id);
 
         const dropdownItems = [
-          { label: "Not interested in this post", key: "0", onClick: () => notInterested(post._id) },
-          { label: "Remove this post from my feed", key: "1", onClick: () => removePost(post._id) },
+          {
+            label: "Not interested in this post",
+            key: "0",
+            onClick: () => notInterested(post._id),
+          },
+          {
+            label: "Remove this post from my feed",
+            key: "1",
+            onClick: () => removePost(post._id),
+          },
           { type: "divider" },
           { label: "Mute", key: "2" },
           {
@@ -361,18 +398,20 @@ const lastPostRef = useCallback((node) => {
                     </Button>
                   )}
 
-                {user ? <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
-                  <a onClick={(e) => e.preventDefault()}>
-                    <Space>
-                      <Image
-                        src="/images/Frame.png"
-                        alt="More options"
-                        width={18}
-                        height={12}
-                      />
-                    </Space>
-                  </a>
-                </Dropdown> : null}
+                {user && post?.author && post.author._id !== user._id ? (
+                  <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
+                    <a onClick={(e) => e.preventDefault()}>
+                      <Space>
+                        <Image
+                          src="/images/Frame.png"
+                          alt="More options"
+                          width={18}
+                          height={12}
+                        />
+                      </Space>
+                    </a>
+                  </Dropdown>
+                ) : null}
               </div>
             </div>
 
