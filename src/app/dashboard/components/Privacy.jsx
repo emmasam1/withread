@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import ToggleSwitch from "./reusables/toggleStwich";
 import DisplayThemeSelector from "./ThemeToggle";
 import Image from "next/image";
+import Link from "next/link";
 
 const Privacy = () => {
   const [allowFollow, setAllowFollow] = useState(true);
@@ -30,7 +31,8 @@ const Privacy = () => {
         <div>
           <h1 className="font-medium">Private Account</h1>
           <p className="text-[#333333B2] text-xs">
-            Turn your account to private and only your followers that you approve can view your profile
+            Turn your account to private and only your followers that you
+            approve can view your profile
           </p>
         </div>
         <ToggleSwitch value={privateAccount} onChange={setPrivateAccount} />
@@ -72,7 +74,14 @@ const Privacy = () => {
       {/* Blocked Accounts */}
       <div className="flex justify-between items-center py-5 border-b border-[#D0D0D033]">
         <h1 className="font-medium">Blocked Accounts</h1>
-        <Image src="/images/right_arrow.png" alt="arrow" height={10} width={10} />
+        <Link href="/dashboard/settings/blocked-accounts" className="cursor-pointer">
+          <Image
+            src="/images/right_arrow.png"
+            alt="arrow"
+            height={10}
+            width={10}
+          />
+        </Link>
       </div>
 
       {/* Allow Message Requests (LAST ONE - NO BORDER) */}
@@ -83,7 +92,10 @@ const Privacy = () => {
             No one except people you follow
           </p>
         </div>
-        <ToggleSwitch value={allowMessageRequests} onChange={setAllowMessageRequests} />
+        <ToggleSwitch
+          value={allowMessageRequests}
+          onChange={setAllowMessageRequests}
+        />
       </div>
     </div>
   );
