@@ -4,17 +4,27 @@ import { Button, Select, Input, Modal } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useApp } from "@/app/context/context";
 import Image from "next/image";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const Account = () => {
+  const { user, API_BASE_URL, token } = useApp();
+
+  // modal flow state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isContinue, setIsContinue] = useState(false);
+  const [isContinue, setIsContinue] = useState(false); // step indicator
   const [modalTitle, setModalTitle] = useState("Verify To Change Password");
   const [inputPlaceholder, setInputPlaceholder] = useState(
     "Enter your password"
   );
   const [isCompleted, setIsCompleted] = useState(false);
-  const { user } = useApp();
+  const [submitting, setSubmitting] = useState(false); // API submit loading
 
+  // password values
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  /* ---------------------------------- Modal --------------------------------- */
   const showModal = () => setIsModalOpen(true);
 
   const handleCancel = () => {
@@ -27,25 +37,77 @@ const Account = () => {
     setModalTitle("Verify To Change Password");
     setInputPlaceholder("Enter your password");
     setIsCompleted(false);
-  };
-
-  const changePassword = () => {
-    if (!isContinue) {
-      // First click: Switch to Change Password screen
-      setModalTitle("Change Your Password");
-      setInputPlaceholder("Enter your new password");
-      setIsContinue(true);
-    } else {
-      // Second click: Simulate API call and show success state
-      setIsCompleted(true);
-      setTimeout(() => {
-        // resetModal();
-      }, 2000);
-    }
+    setSubmitting(false);
+    setCurrentPassword("");
+    setNewPassword("");
   };
 
   const onDone = () => {
     setIsModalOpen(false);
+    resetModal();
+  };
+
+  /* ------------------------- Continue / Submit handler ----------------------- */
+  const changePassword = async () => {
+    // STEP 1 -> move to STEP 2
+    if (!isContinue) {
+      if (!currentPassword.trim()) {
+        toast.error("Please enter your current password.");
+        return;
+      }
+      setModalTitle("Change Your Password");
+      setInputPlaceholder("Enter your new password");
+      setIsContinue(true);
+      return;
+    }
+
+    // STEP 2 -> submit to API
+    if (!newPassword.trim()) {
+      toast.error("Please enter a new password.");
+      return;
+    }
+
+    // (Optional) basic client rule
+    if (newPassword.trim().length < 6) {
+      toast.error("New password must be at least 6 characters.");
+      return;
+    }
+
+    const email = user?.email;
+    if (!email) {
+      toast.error("No email found for this account.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        email,
+        currentPassword: currentPassword.trim(),
+        newPassword: newPassword.trim(),
+      };
+      console.log(payload);
+      const response = await axios.patch(
+        `${API_BASE_URL}/api/user/change-password`,
+        payload,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      toast.success(response?.data?.message || "Password changed successfully!");
+      setIsCompleted(true);
+    } catch (err) {
+      console.error("Password change error:", err);
+      // Attempt to surface backend msg if exists
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Failed to change password.";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -72,12 +134,16 @@ const Account = () => {
             <p className="font-semibold text-lg">
               New Password Created Successfully!!
             </p>
-            <Button className="!bg-black !text-white !rounded-full mx-auto w-full hover:!text-white !border-none mt-3" onClick={onDone}>
+            <Button
+              className="!bg-black !text-white !rounded-full mx-auto w-full hover:!text-white !border-none mt-3"
+              onClick={onDone}
+            >
               Done
             </Button>
           </div>
         ) : (
           <div>
+            {/* Email */}
             <div className="space-y-1 mb-4">
               <p className="font-medium text-gray-700">Email Address</p>
               <Input
@@ -87,11 +153,18 @@ const Account = () => {
               />
             </div>
 
+            {/* Password field */}
             <div className="space-y-1">
               <p className="font-medium text-gray-700">
                 {isContinue ? "Enter New Password" : "Re-enter Password"}
               </p>
               <Input.Password
+                value={isContinue ? newPassword : currentPassword}
+                onChange={(e) =>
+                  isContinue
+                    ? setNewPassword(e.target.value)
+                    : setCurrentPassword(e.target.value)
+                }
                 placeholder={inputPlaceholder}
                 className="!rounded-lg !bg-[#F6F6F6] !border-[#0A0E1614]"
                 iconRender={(visible) =>
@@ -100,6 +173,7 @@ const Account = () => {
               />
             </div>
 
+            {/* Forgot password link only in verify step */}
             {!isContinue && (
               <div className="flex justify-end mt-4">
                 <span className="text-purple-600 text-sm cursor-pointer hover:underline">
@@ -108,11 +182,13 @@ const Account = () => {
               </div>
             )}
 
+            {/* Actions */}
             <div className="flex justify-end gap-5 mt-6">
               <Button
                 type="default"
                 className="!rounded-full !px-6 !py-2 !bg-[#F6F6F6] !text-black"
                 onClick={handleCancel}
+                disabled={submitting}
               >
                 Cancel
               </Button>
@@ -120,6 +196,7 @@ const Account = () => {
                 type="primary"
                 className="!rounded-full !px-6 !py-2 !bg-black !text-white"
                 onClick={changePassword}
+                loading={submitting}
               >
                 Continue
               </Button>
@@ -130,6 +207,7 @@ const Account = () => {
 
       {/* General Section */}
       <h1 className="font-semibold text-lg">General</h1>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Email Address */}
         <div className="space-y-1">
@@ -156,6 +234,8 @@ const Account = () => {
             ]}
           />
         </div>
+
+        {/* Language */}
         <div className="space-y-1">
           <p className="font-medium text-gray-700">Language</p>
           <Select
