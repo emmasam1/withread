@@ -11,10 +11,10 @@ const AllMessages = () => {
                     <span className='text-gray-500 text-xs'>💼 I'm considering a job offer, but I'm torn between </span>
                 </div>
             </div>
-            <div>
+            <div className='flex flex-col items-center justify-end'>
                 <span className='text-gray-500 text-xs'>1:58 PM</span>
-                <div className='flex items-center'>
-                    <span>3</span>
+                <div className='flex justify-center items-center bg-[#B475CC] text-white rounded-full h-4 w-4 text-center'>
+                    <span className='text-xs text-center'>3</span>
                 </div>
             </div>
         </div>

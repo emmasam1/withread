@@ -1,14 +1,22 @@
 "use client";
 
-import { Button, Input, Divider, Dropdown, Space } from "antd";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  Button,
+  Input,
+  Divider,
+  Dropdown,
+  Space,
+  Skeleton,
+  // MenuProps // (uncomment if you want TS type help)
+} from "antd";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState, useEffect, useRef } from "react";
-import { useApp } from "../../context/context";
-import { motion } from "framer-motion";
-import MyCommunity from "../components/MyCommunity";
-import AllCommunities from "../components/AllCommunities";
 import axios from "axios";
+import { motion } from "framer-motion";
+import { toast } from "react-toastify";
+import { useApp } from "../../context/context";
+import AllCommunities from "../components/AllCommunities";
 
 const Page = () => {
   const {
@@ -21,43 +29,20 @@ const Page = () => {
     setLoading,
     token,
   } = useApp();
+
+  /* --------------------------------- STATE -------------------------------- */
   const [activeTab, setActiveTab] = useState("1");
+
+  // Posts from the currently selected community
   const [communityPosts, setCommunityPosts] = useState([]);
+
+  // All communities user belongs to (sidebar list)
   const [communities, setCommunities] = useState([]);
 
-  useEffect(() => {
-    const fetchCommunities = async () => {
-      if (!API_BASE_URL || !token) return;
+  // Loading state for the *sidebar* communities fetch
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
 
-      try {
-        const res = await axios.get(
-          `${API_BASE_URL}/api/community/my-community`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        console.log(res);
-      } catch (error) {
-        console.error("Error fetching communities:", error);
-        toast.error("Error fetching communities");
-      }
-    };
-
-    fetchCommunities();
-  }, [token, API_BASE_URL]);
-
-  const initials = `${user?.firstName?.[0] || ""}${
-    user?.lastName?.[0] || ""
-  }`.toUpperCase();
-
-  const tabs = [
-    { key: "1", label: "All Posts" },
-    { key: "2", label: "Members" },
-    { key: "3", label: "About" },
-  ];
-
-  const hasSetDefault = useRef(false);
-
+  // Selected community object
   const [selectedCommunity, setSelectedCommunity] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = sessionStorage.getItem("selectedCommunity");
@@ -66,63 +51,110 @@ const Page = () => {
     return null;
   });
 
-  useEffect(() => {
-    const getCommunityPosts = async () => {
-      if (!selectedCommunity?._id) return;
+  const hasSetDefault = useRef(false);
 
-      const id = selectedCommunity._id;
-      const url = `${API_BASE_URL}/api/post/${id}/posts`;
+  /* ---------------------- USER INITIALS (FALLBACK AVATAR) ----------------- */
+  const initials = `${user?.firstName?.[0] || ""}${
+    user?.lastName?.[0] || ""
+  }`.toUpperCase();
+
+  /* -------------------------------- TABS ---------------------------------- */
+  const tabs = [
+    { key: "1", label: "All Posts" },
+    { key: "2", label: "Members" },
+    { key: "3", label: "About" },
+  ];
+
+  /* ------------------------- FETCH USER COMMUNITIES ----------------------- */
+  useEffect(() => {
+    const fetchCommunities = async () => {
+      if (!API_BASE_URL || !token) return;
+
+      try {
+        setIsLocalLoading(true);
+
+        const res = await axios.get(
+          `${API_BASE_URL}/api/community/my-community`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const list = res?.data?.communities || [];
+        setCommunities(list);
+
+        // Set default community if none selected yet
+        if (!hasSetDefault.current) {
+          const stored = sessionStorage.getItem("selectedCommunity");
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              setSelectedCommunity(parsed);
+              hasSetDefault.current = true;
+            } catch {
+              // ignore bad parse; fallback below
+            }
+          } else if (list.length > 0) {
+            setSelectedCommunity(list[0]);
+            sessionStorage.setItem("selectedCommunity", JSON.stringify(list[0]));
+            hasSetDefault.current = true;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching communities:", error);
+        toast.error("Error fetching communities.");
+      } finally {
+        setIsLocalLoading(false);
+      }
+    };
+
+    fetchCommunities();
+  }, [API_BASE_URL, token]);
+
+  /* ---------------------- FETCH POSTS FOR SELECTED COMMUNITY -------------- */
+  const fetchCommunityPosts = useCallback(
+    async (communityId) => {
+      if (!communityId || !API_BASE_URL) return;
+
+      const url = `${API_BASE_URL}/api/post/${communityId}/posts`;
 
       try {
         setLoading(true);
         const res = await axios.get(url);
-        setCommunityPosts(res.data.posts || []);
-        console.log("All Community post", res);
+        setCommunityPosts(res?.data?.posts || []);
       } catch (error) {
         console.error("Error fetching community posts:", error);
       } finally {
         setLoading(false);
       }
-    };
-
-    getCommunityPosts();
-  }, [selectedCommunity?._id]);
+    },
+    [API_BASE_URL, setLoading]
+  );
 
   useEffect(() => {
-    if (selectedCommunity) return;
+    if (!selectedCommunity?._id) return;
+    fetchCommunityPosts(selectedCommunity._id);
+  }, [selectedCommunity?._id, fetchCommunityPosts]);
 
-    const stored = sessionStorage.getItem("selectedCommunity");
+  /* ------------------------ COMMUNITY CLICK HANDLER ----------------------- */
+  const handleCommunityClick = async (community) => {
+    if (!community?._id) return;
+    if (selectedCommunity?._id === community._id) return; // no-op
+    setSelectedCommunity(community);
+    sessionStorage.setItem("selectedCommunity", JSON.stringify(community));
+    // posts auto-refetch via effect above
+  };
 
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setSelectedCommunity(parsed);
-        return;
-      } catch (err) {
-        console.error("Invalid stored community", err);
-      }
-    }
+  /* ---------------------------- POST MENU ITEMS --------------------------- */
+  const postMenuItems = [
+    { key: "1", label: "Edit" },
+    { key: "2", label: "Report" },
+  ];
 
-    if (user?.communities?.length > 0) {
-      setSelectedCommunity({ _id: user.communities[0] }); // fallback
-    }
-  }, [user, selectedCommunity]);
-
-  //   useEffect(() => {
-  //   const stored = sessionStorage.getItem("selectedCommunity");
-  //   if (stored && !selectedCommunity) {
-  //     try {
-  //       const parsed = JSON.parse(stored);
-  //       setSelectedCommunity(parsed);
-  //     } catch (err) {
-  //       console.error("Invalid stored community", err);
-  //     }
-  //   }
-  // }, []);
-
+  /* ---------------------- SCREEN: ALL COMMUNITIES FALLBACK ---------------- */
   const shouldShowAllCommunities = !selectedCommunity;
 
-  // ✅ Show loading skeleton
+  /* -------------------------- GLOBAL LOADING SKELETON --------------------- */
   if (loading) {
     return (
       <div className="p-6">
@@ -145,44 +177,14 @@ const Page = () => {
     );
   }
 
-  // Dummy post
-  const post = {
-    _id: "dummy123",
-    title: "How to Improve Your JavaScript Skills",
-    content:
-      "JavaScript is a powerful language used for frontend and backend development...",
-    createdAt: new Date().toISOString(),
-    isAnonymous: false,
-    author: {
-      firstName: "Eric",
-      lastName: "Sam",
-      avatar: null,
-    },
-    images: ["/images/banner.jpg"],
-    likes: [1, 2, 3],
-    comments: [1, 2],
-    collaborators: [],
-  };
-
-  const handleLikeDislike = () => {
-    console.log("Like clicked");
-  };
-
-  const isLiked = false;
-  const likedAnimation = null;
-
-  const items = [
-    { key: "1", label: "Edit" },
-    { key: "2", label: "Report" },
-  ];
-
+  /* ------------------------------ RENDER ---------------------------------- */
   return (
     <div className="p-3">
       {shouldShowAllCommunities ? (
         <AllCommunities />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-[2fr_400px] gap-7 p-4">
-          {/* Left Column */}
+          {/* ---------------------------- LEFT COLUMN ---------------------- */}
           <div className="rounded-lg grid grid-cols">
             <div className="bg-white p-3 rounded-md w-full">
               {/* Community Banner */}
@@ -213,6 +215,7 @@ const Page = () => {
               <div className="flex items-center justify-between">
                 <div className="mt-15 ml-4">
                   <h2 className="font-semibold">{selectedCommunity?.name}</h2>
+                  {/* Replace hard-coded members if you want dynamic count */}
                   <p className="mt-2 text-sm">
                     Public Community • 20.5K Members
                   </p>
@@ -244,6 +247,7 @@ const Page = () => {
 
               {/* Post Input */}
               <div className="rounded-lg p-3 my-6">
+                {/* Tabs */}
                 <div className="relative flex bg-gray-100 rounded-full p-1 mb-4">
                   {tabs.map((tab) => (
                     <button
@@ -263,17 +267,18 @@ const Page = () => {
                     style={{ left: `${(parseInt(activeTab) - 1) * 33.333}%` }}
                   />
                 </div>
+
                 <div className="flex items-center gap-5">
                   {user?.avatar ? (
-                  <div className="rounded-full w-12 h-12">
+                    <div className="rounded-full w-12 h-12">
                       <Image
-                      src={user.avatar}
-                      alt="user image"
-                      width={45}
-                      height={45}
-                      className="rounded-full object-cover h-full w-full"
-                    />
-                  </div>
+                        src={user.avatar}
+                        alt="user image"
+                        width={45}
+                        height={45}
+                        className="rounded-full object-cover h-full w-full"
+                      />
+                    </div>
                   ) : (
                     <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
                       <h1 className="font-semibold text-gray-400">
@@ -292,7 +297,9 @@ const Page = () => {
                     />
                   </Link>
                 </div>
+
                 <Divider className="!bg-[#f6f6f6b3]" />
+
                 <div className="flex items-center justify-between">
                   <div className="flex gap-10 items-center">
                     <Link
@@ -329,10 +336,21 @@ const Page = () => {
               </div>
             </div>
 
-            {/* Post Content */}
+            {/* Posts in Community */}
             {communityPosts.map((post) => {
+              const initialsPost = `${post?.author?.firstName?.[0] || ""}${
+                post?.author?.lastName?.[0] || ""
+              }`.toUpperCase();
+
+              const isLiked = false; // wire up later if needed
+              const likedAnimation = null;
+
               return (
-                <div className="mt-5 p-3 bg-white rounded-md">
+                <div
+                  key={post._id}
+                  className="mt-5 p-3 bg-white rounded-md w-full"
+                >
+                  {/* Post Header */}
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
                       {post.isAnonymous ? (
@@ -342,19 +360,19 @@ const Page = () => {
                           </span>
                         </div>
                       ) : post.author?.avatar ? (
-                       <div className="rounded-full w-12 h-12">
-                         <Image
-                          src={post.author.avatar}
-                          alt="user image"
-                          width={45}
-                          height={45}
-                          className="rounded-full object-cover h-full w-full"
-                        />
-                       </div>
+                        <div className="rounded-full w-12 h-12">
+                          <Image
+                            src={post.author.avatar}
+                            alt="user image"
+                            width={45}
+                            height={45}
+                            className="rounded-full object-cover h-full w-full"
+                          />
+                        </div>
                       ) : (
                         <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
                           <span className="text-sm text-gray-500 font-semibold">
-                            {initials}
+                            {initialsPost}
                           </span>
                         </div>
                       )}
@@ -369,6 +387,7 @@ const Page = () => {
                         </p>
                       </div>
                     </div>
+
                     <div className="flex items-center gap-3">
                       {!post.isAnonymous && (
                         <Button
@@ -381,7 +400,7 @@ const Page = () => {
                         </Button>
                       )}
                       <Dropdown
-                        menu={{ items }}
+                        menu={{ items: postMenuItems }}
                         trigger={["click"]}
                         placement="bottomRight"
                       >
@@ -399,7 +418,7 @@ const Page = () => {
                     </div>
                   </div>
 
-                  {/* Image */}
+                  {/* Post Image */}
                   {post.images?.length > 0 && (
                     <div className="my-3">
                       <Image
@@ -412,7 +431,7 @@ const Page = () => {
                     </div>
                   )}
 
-                  {/* Content */}
+                  {/* Post Body */}
                   <div>
                     <h2 className="text-lg font-semibold text-gray-800 mb-2">
                       {post.title || "Untitled"}
@@ -428,11 +447,11 @@ const Page = () => {
                     </p>
                   </div>
 
-                  {/* Footer */}
+                  {/* Post Footer */}
                   <div className="flex justify-between items-center mt-3">
                     <div className="flex gap-6 items-center">
                       <button
-                        onClick={() => handleLikeDislike(post._id)}
+                        onClick={() => console.log("Like clicked", post._id)}
                         className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
                           isLiked
                             ? "bg-blue-100 text-blue-600"
@@ -495,7 +514,7 @@ const Page = () => {
             })}
           </div>
 
-          {/* Right Sidebar */}
+          {/* --------------------- RIGHT SIDEBAR (INLINE) ------------------- */}
           <div className="w-full relative lg:fixed lg:right-10 lg:w-[400px] lg:h-screen lg:pb-28 overflow-auto bg-white p-4 rounded-lg">
             <Input
               placeholder="Search anything..."
@@ -509,11 +528,65 @@ const Page = () => {
                 />
               }
             />
-            <MyCommunity
-              selectedCommunityId={selectedCommunity?._id}
-              setSelectedCommunity={setSelectedCommunity}
-              selectedCommunity={selectedCommunity}
-            />
+
+            {/* My Community List */}
+            <div className="flex justify-between items-center">
+              <h1 className="font-medium my-3 text-md">My Community</h1>
+              <Link href="/dashboard/profile?tab=5">See all</Link>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {isLocalLoading ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="flex flex-col px-3 p-2">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <Skeleton.Avatar active size="large" shape="circle" />
+                        <Skeleton.Input
+                          active
+                          style={{ width: 120, height: 20 }}
+                          size="small"
+                        />
+                      </div>
+                      <Skeleton.Button
+                        active
+                        size="small"
+                        style={{ width: 25 }}
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                communities.map((community) => {
+                  const isActive = selectedCommunity?._id === community._id;
+                  return (
+                    <div
+                      key={community._id}
+                      onClick={() => handleCommunityClick(community)}
+                      className={`flex flex-col cursor-pointer px-3 p-2 rounded-md ${
+                        isActive ? "bg-[#F5F4FF]" : "hover:bg-[#F6F6F6]"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={community.avatar || "/images/placeholder.jpg"}
+                            alt={`${community.name} avatar`}
+                            width={45}
+                            height={45}
+                            className="rounded-full object-cover h-10 w-10"
+                          />
+                          <h2>{community.name}</h2>
+                        </div>
+                        <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
+                          {community.members.length}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       )}
