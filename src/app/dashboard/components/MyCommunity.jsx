@@ -6,6 +6,7 @@ import { useApp } from "@/app/context/context";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import { Skeleton } from "antd";
 
 const MyCommunity = ({
   selectedCommunityId,
@@ -21,9 +22,7 @@ const MyCommunity = ({
       const res = await axios.get(
         `${API_BASE_URL}/api/community/${communityId}/members`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       return res.data.members;
@@ -82,8 +81,6 @@ const MyCommunity = ({
           setCommunities(enrichedCommunities);
 
           const stored = sessionStorage.getItem("selectedCommunity");
-
-          // Set default community if not already selected
           if (!selectedCommunity && !stored && enrichedCommunities.length > 0) {
             const firstCommunity = enrichedCommunities[0];
             setSelectedCommunity(firstCommunity);
@@ -114,34 +111,53 @@ const MyCommunity = ({
       </div>
 
       <div className="flex flex-col gap-3">
-        {communities.map((community) => {
-          const isActive = selectedCommunityId === community._id;
-          return (
-            <div
-              key={community._id}
-              onClick={() => handleCommunityClick(community)}
-              className={`flex flex-col cursor-pointer px-3 p-2 rounded-md ${
-                isActive ? "bg-[#F5F4FF]" : "hover:bg-[#F6F6F6]"
-              }`}
-            >
+        {isLocalLoading ? (
+          // Skeleton Loader for Communities
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="flex flex-col px-3 p-2">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <Image
-                    src={community.avatar || "/images/placeholder.jpg"}
-                    alt={`${community.name} avatar`}
-                    width={45}
-                    height={45}
-                    className="rounded-full object-cover h-10 w-10"
+                  <Skeleton.Avatar active size="large" shape="circle" />
+                  <Skeleton.Input
+                    active
+                    style={{ width: 120, height: 20 }}
+                    size="small"
                   />
-                  <h2>{community.name}</h2>
                 </div>
-                <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
-                  {community.members.length}
-                </div>
+                <Skeleton.Button active size="small" style={{ width: 25 }} />
               </div>
             </div>
-          );
-        })}
+          ))
+        ) : (
+          communities.map((community) => {
+            const isActive = selectedCommunityId === community._id;
+            return (
+              <div
+                key={community._id}
+                onClick={() => handleCommunityClick(community)}
+                className={`flex flex-col cursor-pointer px-3 p-2 rounded-md ${
+                  isActive ? "bg-[#F5F4FF]" : "hover:bg-[#F6F6F6]"
+                }`}
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={community.avatar || "/images/placeholder.jpg"}
+                      alt={`${community.name} avatar`}
+                      width={45}
+                      height={45}
+                      className="rounded-full object-cover h-10 w-10"
+                    />
+                    <h2>{community.name}</h2>
+                  </div>
+                  <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
+                    {community.members.length}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

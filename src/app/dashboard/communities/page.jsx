@@ -19,10 +19,32 @@ const Page = () => {
     logout,
     loading,
     setLoading,
+    token,
   } = useApp();
   const [activeTab, setActiveTab] = useState("1");
   const [communityPosts, setCommunityPosts] = useState([]);
-  
+  const [communities, setCommunities] = useState([]);
+
+  useEffect(() => {
+    const fetchCommunities = async () => {
+      if (!API_BASE_URL || !token) return;
+
+      try {
+        const res = await axios.get(
+          `${API_BASE_URL}/api/community/my-community`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log(res);
+      } catch (error) {
+        console.error("Error fetching communities:", error);
+        toast.error("Error fetching communities");
+      }
+    };
+
+    fetchCommunities();
+  }, [token, API_BASE_URL]);
 
   const initials = `${user?.firstName?.[0] || ""}${
     user?.lastName?.[0] || ""
@@ -37,13 +59,12 @@ const Page = () => {
   const hasSetDefault = useRef(false);
 
   const [selectedCommunity, setSelectedCommunity] = useState(() => {
-  if (typeof window !== "undefined") {
-    const stored = sessionStorage.getItem("selectedCommunity");
-    return stored ? JSON.parse(stored) : null;
-  }
-  return null;
-});
-
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("selectedCommunity");
+      return stored ? JSON.parse(stored) : null;
+    }
+    return null;
+  });
 
   useEffect(() => {
     const getCommunityPosts = async () => {
@@ -87,17 +108,17 @@ const Page = () => {
     }
   }, [user, selectedCommunity]);
 
-//   useEffect(() => {
-//   const stored = sessionStorage.getItem("selectedCommunity");
-//   if (stored && !selectedCommunity) {
-//     try {
-//       const parsed = JSON.parse(stored);
-//       setSelectedCommunity(parsed);
-//     } catch (err) {
-//       console.error("Invalid stored community", err);
-//     }
-//   }
-// }, []);
+  //   useEffect(() => {
+  //   const stored = sessionStorage.getItem("selectedCommunity");
+  //   if (stored && !selectedCommunity) {
+  //     try {
+  //       const parsed = JSON.parse(stored);
+  //       setSelectedCommunity(parsed);
+  //     } catch (err) {
+  //       console.error("Invalid stored community", err);
+  //     }
+  //   }
+  // }, []);
 
   const shouldShowAllCommunities = !selectedCommunity;
 
@@ -244,13 +265,15 @@ const Page = () => {
                 </div>
                 <div className="flex items-center gap-5">
                   {user?.avatar ? (
-                    <Image
+                  <div className="rounded-full w-12 h-12">
+                      <Image
                       src={user.avatar}
                       alt="user image"
                       width={45}
                       height={45}
-                      className="rounded-full"
+                      className="rounded-full object-cover h-full w-full"
                     />
+                  </div>
                   ) : (
                     <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
                       <h1 className="font-semibold text-gray-400">
@@ -258,7 +281,10 @@ const Page = () => {
                       </h1>
                     </div>
                   )}
-                 <Link href={`/dashboard/communities/${selectedCommunity?._id}`} className="w-full">
+                  <Link
+                    href={`/dashboard/communities/${selectedCommunity?._id}`}
+                    className="w-full"
+                  >
                     <Input
                       placeholder="Got something on your mind? Spill it out"
                       className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3"
@@ -305,162 +331,172 @@ const Page = () => {
 
             {/* Post Content */}
             {communityPosts.map((post) => {
-              return(
-
-            <div className="mt-5 p-3 bg-white rounded-md">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  {post.isAnonymous ? (
-                    <div className="bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
-                      <span className="text-sm font-semibold">Anonymous</span>
+              return (
+                <div className="mt-5 p-3 bg-white rounded-md">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-3">
+                      {post.isAnonymous ? (
+                        <div className="bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
+                          <span className="text-sm font-semibold">
+                            Anonymous
+                          </span>
+                        </div>
+                      ) : post.author?.avatar ? (
+                       <div className="rounded-full w-12 h-12">
+                         <Image
+                          src={post.author.avatar}
+                          alt="user image"
+                          width={45}
+                          height={45}
+                          className="rounded-full object-cover h-full w-full"
+                        />
+                       </div>
+                      ) : (
+                        <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
+                          <span className="text-sm text-gray-500 font-semibold">
+                            {initials}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-800">
+                          {post.isAnonymous
+                            ? ""
+                            : `${post.author?.firstName} ${post.author?.lastName}`}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(post.createdAt).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                  ) : post.author?.avatar ? (
-                    <Image
-                      src={post.author.avatar}
-                      alt="user image"
-                      width={45}
-                      height={45}
-                      className="rounded-full"
-                    />
-                  ) : (
-                    <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
-                      <span className="text-sm text-gray-500 font-semibold">
-                        {initials}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      {!post.isAnonymous && (
+                        <Button
+                          type="text"
+                          className="!p-0 !text-gray-500 hover:!text-gray-700"
+                        >
+                          {post.collaborators?.length > 0
+                            ? "Follow Both"
+                            : "Follow"}
+                        </Button>
+                      )}
+                      <Dropdown
+                        menu={{ items }}
+                        trigger={["click"]}
+                        placement="bottomRight"
+                      >
+                        <a onClick={(e) => e.preventDefault()}>
+                          <Space>
+                            <Image
+                              src="/images/Frame.png"
+                              alt="More options"
+                              width={18}
+                              height={12}
+                            />
+                          </Space>
+                        </a>
+                      </Dropdown>
+                    </div>
+                  </div>
+
+                  {/* Image */}
+                  {post.images?.length > 0 && (
+                    <div className="my-3">
+                      <Image
+                        src={post.images[0]}
+                        alt="Post image"
+                        width={800}
+                        height={200}
+                        className="rounded-md w-full object-cover !h-90"
+                      />
                     </div>
                   )}
+
+                  {/* Content */}
                   <div>
-                    <p className="font-medium text-gray-800">
-                      {post.isAnonymous
-                        ? ""
-                        : `${post.author?.firstName} ${post.author?.lastName}`}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(post.createdAt).toLocaleString()}
+                    <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                      {post.title || "Untitled"}
+                    </h2>
+                    <p>
+                      {post.content.slice(0, 100)}...
+                      <Link
+                        href={`/dashboard/feeds/${post._id}`}
+                        className="text-sm"
+                      >
+                        Read More
+                      </Link>
                     </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {!post.isAnonymous && (
-                    <Button
-                      type="text"
-                      className="!p-0 !text-gray-500 hover:!text-gray-700"
-                    >
-                      {post.collaborators?.length > 0
-                        ? "Follow Both"
-                        : "Follow"}
-                    </Button>
-                  )}
-                  <Dropdown
-                    menu={{ items }}
-                    trigger={["click"]}
-                    placement="bottomRight"
-                  >
-                    <a onClick={(e) => e.preventDefault()}>
-                      <Space>
+
+                  {/* Footer */}
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="flex gap-6 items-center">
+                      <button
+                        onClick={() => handleLikeDislike(post._id)}
+                        className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
+                          isLiked
+                            ? "bg-blue-100 text-blue-600"
+                            : "bg-gray-300 text-gray-800"
+                        } ${
+                          likedAnimation === post._id
+                            ? "scale-110"
+                            : "scale-100"
+                        }`}
+                      >
                         <Image
-                          src="/images/Frame.png"
-                          alt="More options"
-                          width={18}
-                          height={12}
+                          src="/images/like.png"
+                          alt="like icon"
+                          width={15}
+                          height={15}
                         />
-                      </Space>
-                    </a>
-                  </Dropdown>
-                </div>
-              </div>
-
-              {/* Image */}
-              {post.images?.length > 0 && (
-                <div className="my-3">
-                  <Image
-                    src={post.images[0]}
-                    alt="Post image"
-                    width={800}
-                    height={200}
-                    className="rounded-md w-full object-cover !h-90"
-                  />
-                </div>
-              )}
-
-              {/* Content */}
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">
-                  {post.title || "Untitled"}
-                </h2>
-                <p>
-                  {post.content.slice(0, 100)}...
-                  <Link
-                    href={`/dashboard/feeds/${post._id}`}
-                    className="text-sm"
-                  >
-                    Read More
-                  </Link>
-                </p>
-              </div>
-
-              {/* Footer */}
-              <div className="flex justify-between items-center mt-3">
-                <div className="flex gap-6 items-center">
-                  <button
-                    onClick={() => handleLikeDislike(post._id)}
-                    className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
-                      isLiked
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-300 text-gray-800"
-                    } ${
-                      likedAnimation === post._id ? "scale-110" : "scale-100"
-                    }`}
-                  >
-                    <Image
-                      src="/images/like.png"
-                      alt="like icon"
-                      width={15}
-                      height={15}
-                    />
-                    {isLiked ? "Liked" : "Like"}
-                    <Image
-                      src="/images/dot.png"
-                      alt="dot"
-                      width={3}
-                      height={3}
-                    />
-                    {post.likes.length}
-                  </button>
-                  <Link href={`/dashboard/feeds/${post._id}`}>
-                    <p className="flex items-center gap-1 text-xs cursor-pointer">
+                        {isLiked ? "Liked" : "Like"}
+                        <Image
+                          src="/images/dot.png"
+                          alt="dot"
+                          width={3}
+                          height={3}
+                        />
+                        {post.likes.length}
+                      </button>
+                      <Link href={`/dashboard/feeds/${post._id}`}>
+                        <p className="flex items-center gap-1 text-xs cursor-pointer">
+                          <Image
+                            src="/images/comment.png"
+                            alt="comment icon"
+                            width={15}
+                            height={15}
+                          />
+                          Comment
+                        </p>
+                      </Link>
+                      <p className="flex items-center gap-1 text-xs">
+                        <Image
+                          src="/images/share.png"
+                          alt="share icon"
+                          width={15}
+                          height={15}
+                        />
+                        Share
+                      </p>
+                    </div>
+                    <div className="flex gap-1.5 text-xs items-center">
+                      <p>{post.comments.length} Comments</p>
                       <Image
-                        src="/images/comment.png"
-                        alt="comment icon"
-                        width={15}
-                        height={15}
+                        src="/images/dot.png"
+                        alt="dot"
+                        width={3}
+                        height={3}
                       />
-                      Comment
-                    </p>
-                  </Link>
-                  <p className="flex items-center gap-1 text-xs">
-                    <Image
-                      src="/images/share.png"
-                      alt="share icon"
-                      width={15}
-                      height={15}
-                    />
-                    Share
-                  </p>
+                      <p>{post.comments.length} Impressions</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-1.5 text-xs items-center">
-                  <p>{post.comments.length} Comments</p>
-                  <Image src="/images/dot.png" alt="dot" width={3} height={3} />
-                  <p>{post.comments.length} Impressions</p>
-                </div>
-              </div>
-            </div>
-              )
+              );
             })}
           </div>
 
           {/* Right Sidebar */}
-          <div className="w-full relative lg:fixed lg:right-10 lg:w-[400px] lg:h-screen lg:pb-28 overflow-auto">
+          <div className="w-full relative lg:fixed lg:right-10 lg:w-[400px] lg:h-screen lg:pb-28 overflow-auto bg-white p-4 rounded-lg">
             <Input
               placeholder="Search anything..."
               className="mt-4 !rounded-full !bg-[#F6F6F6] !border-none"

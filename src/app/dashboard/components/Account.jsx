@@ -86,7 +86,6 @@ const Account = () => {
         currentPassword: currentPassword.trim(),
         newPassword: newPassword.trim(),
       };
-      console.log(payload);
       const response = await axios.patch(
         `${API_BASE_URL}/api/user/change-password`,
         payload,
