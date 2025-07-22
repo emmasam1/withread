@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 const AllMessages = ({ onSelectMessage }) => {
   const messages = [
@@ -38,7 +38,7 @@ const AllMessages = ({ onSelectMessage }) => {
   ];
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 max-h-full overflow-y-auto">
       {messages.map((msg) => (
         <div
           key={msg.id}
