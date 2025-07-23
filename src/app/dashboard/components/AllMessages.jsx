@@ -31,40 +31,6 @@ const AllMessages = ({ onSelectMessage }) => {
     <h1 className="font-semibold text-gray-400">{text}</h1>
   );
 
-  const messages = [
-    {
-      id: 1,
-      name: "Muna Jamaji",
-      username: "@munajamaji",
-      text: "💼 I'm considering a job offer, but I'm torn between...",
-      time: "1:58 PM",
-      count: 3,
-    },
-    {
-      id: 2,
-      name: "Ada Obi",
-      username: "@adaobi",
-      text: "🔥 The project is almost done, just adding final touches.",
-      time: "12:30 PM",
-      count: 1,
-    },
-    {
-      id: 3,
-      name: "John Doe",
-      username: "@johndoe",
-      text: "Hey! Are you coming to the event tonight?",
-      time: "10:15 AM",
-      count: 5,
-    },
-    {
-      id: 4,
-      name: "Sarah Mark",
-      username: "@sarahmark",
-      text: "Can you review my PR on GitHub? 🚀",
-      time: "Yesterday",
-      count: 0,
-    },
-  ];
 
   return (
     <div className="flex flex-col gap-1 max-h-full overflow-y-auto">
@@ -104,8 +70,8 @@ const AllMessages = ({ onSelectMessage }) => {
                     @{msg.user?.username}
                   </span>
                 </div>
-                <span className="text-gray-500 text-xs truncate w-44 block">
-                  {msg.text}
+                <span className="text-gray-500 text-xs truncate w-44 block ml-2">
+                  {msg.lastMessage?.content || "No messages yet"}
                 </span>
               </div>
             </div>
