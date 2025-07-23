@@ -22,6 +22,8 @@ const ForYou = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [blockUserId, seBlockUserId] = useState(false);
 
+  console.log(posts);
+
   const showModal = (post) => {
     setSelectedPost(post);
     setIsModalOpen(true);
@@ -31,34 +33,6 @@ const ForYou = () => {
     setIsModalOpen(false);
     setSelectedPost(null);
   };
-
-  // const fetchPosts = async (pageNumber = 1, reset = false) => {
-  //   if (!API_BASE_URL) return;
-
-  //   try {
-  //     if (reset) setLoading(true);
-
-  //     const endpoint = token
-  //       ? `${API_BASE_URL}/api/post/user/post-by-interest?page=${pageNumber}&limit=10`
-  //       : `${API_BASE_URL}/api/post/all-posts?page=${pageNumber}&limit=10`;
-
-  //     const res = await axios.get(endpoint, {
-  //       headers: token ? { Authorization: `Bearer ${token}` } : {},
-  //     });
-
-  //     const fetchedPosts = res.data.posts || [];
-
-  //     setPosts((prev) =>
-  //       pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
-  //     );
-
-  //     setHasMore(pageNumber < res.data.totalPages);
-  //   } catch (error) {
-  //     console.error("Error fetching posts:", error);
-  //   } finally {
-  //     if (reset) setLoading(false);
-  //   }
-  // };
 
   const fetchPosts = async (pageNumber = 1, reset = false) => {
     if (!API_BASE_URL) return;
@@ -162,31 +136,6 @@ const ForYou = () => {
     [loading, hasMore, page]
   );
 
-  // useEffect(() => {
-  //   if ((user && !token) || !API_BASE_URL) return;
-  //   fetchPosts(1);
-  // }, [API_BASE_URL, user, token]);
-
-  // const lastPostRef = useCallback(
-  //   (node) => {
-  //     if (loading) return;
-  //     if (observerRef.current) observerRef.current.disconnect();
-
-  //     observerRef.current = new IntersectionObserver((entries) => {
-  //       if (entries[0].isIntersecting && hasMore) {
-  //         setPage((prevPage) => {
-  //           const nextPage = prevPage + 1;
-  //           fetchPosts(nextPage);
-  //           return nextPage;
-  //         });
-  //       }
-  //     });
-
-  //     if (node) observerRef.current.observe(node);
-  //   },
-  //   [loading, hasMore]
-  // );
-
   const handleLikeDislike = async (postId) => {
     if (!token) return toast.error("You need to log in to like posts.");
 
@@ -217,10 +166,18 @@ const ForYou = () => {
   };
 
   const handleFollowToggle = async (userId) => {
+    if (!user) return toast.error("You need to log in to follow users.");
+
     setLoadingUserId(userId);
     await toggleFollowUser(userId);
     setLoadingUserId(null);
   };
+
+  console.log("Current following list:", user?.following);
+
+  useEffect(() => {
+    console.log("User context updated:", user);
+  }, [user]);
 
   const AvatarPlaceholder = ({ text }) => (
     <h1 className="font-semibold text-gray-400">{text}</h1>
@@ -343,6 +300,12 @@ const ForYou = () => {
           { label: "Show fewer posts like this", key: "5" },
         ];
 
+        let follow_text = user?.following?.includes(post?.author?._id)
+          ? "Following"
+          : "Follow";
+
+        console.log(user?.following, "=============", post?.author?._id);
+
         return (
           <div
             key={post._id}
@@ -392,9 +355,7 @@ const ForYou = () => {
                       type="text"
                       className="!px-3 !bg-black !text-white !rounded-full"
                     >
-                      {user?.following?.includes(post?.author?._id)
-                        ? "Following"
-                        : "Follow"}
+                      {follow_text}
                     </Button>
                   )}
 

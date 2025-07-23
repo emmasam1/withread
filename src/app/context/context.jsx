@@ -4,10 +4,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-// Create the context
 const AppContext = createContext();
 
-// Provider
 export const AppProvider = ({ children }) => {
   const API_BASE_URL = "https://withread-api-vah1.onrender.com";
 
@@ -22,13 +20,8 @@ export const AppProvider = ({ children }) => {
       const storedUser = sessionStorage.getItem("user");
       const storedToken = sessionStorage.getItem("token");
 
-      if (storedUser) {
-        setUserState(JSON.parse(storedUser));
-      }
-
-      if (storedToken) {
-        setTokenState(storedToken);
-      }
+      if (storedUser) setUserState(JSON.parse(storedUser));
+      if (storedToken) setTokenState(storedToken);
     } catch (error) {
       console.error("Error parsing stored user:", error);
       sessionStorage.removeItem("user");
@@ -49,61 +42,61 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // ✅ FIXED: updateUser now uses setUserState directly
-  const updateUser = (newUserData) => {
-    setUserState((prevUser) => {
-      const updatedUser = {
-        ...prevUser,
-        ...newUserData,
-      };
-      sessionStorage.setItem("user", JSON.stringify(updatedUser));
-      return updatedUser;
+  // ✅ FIXED: updateUser merges the previous user object properly
+const updateUser = (newUserData) => {
+  setUserState((prevUser) => {
+    const updatedUser = { ...prevUser, ...newUserData };
+    sessionStorage.setItem("user", JSON.stringify(updatedUser));
+    return updatedUser;
+  });
+};
+
+
+  // ✅ Toggle follow/unfollow logic
+ const toggleFollowUser = async (userId) => {
+  if (!token || !user) {
+    toast.error("You must be logged in to follow users.");
+    return;
+  }
+
+  const userIdStr = String(userId);
+  const isFollowing = (user.following || []).map(String).includes(userIdStr);
+
+  // Optimistic update
+  const updatedFollowing = isFollowing
+    ? user.following.filter((id) => String(id) !== userIdStr)
+    : [...(user.following || []), userIdStr];
+
+  updateUser({ following: updatedFollowing });
+
+  try {
+    if (isFollowing) {
+      await axios.delete(`${API_BASE_URL}/api/user/unfollow/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Unfollowed");
+    } else {
+      await axios.post(
+        `${API_BASE_URL}/api/user/follow/${userId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Followed");
+    }
+  } catch (error) {
+    console.error("Follow toggle failed:", error.response?.data || error);
+    toast.error(error.response?.data?.message || "Action failed.");
+
+    // Rollback on error
+    updateUser({
+      following: user.following,
     });
-  };
+  }
+};
 
-  //toggle follow across the application
-  const toggleFollowUser = async (userId) => {
-    if (!token || !user) {
-      toast.error("You must be logged in to follow users.");
-      return;
-    }
 
-    const isFollowing = user.following?.includes(userId);
 
-    try {
-      if (isFollowing) {
-        // Unfollow
-        const res = await axios.delete(
-          `${API_BASE_URL}/api/user/unfollow/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
 
-        updateUser({
-          following: user.following.filter((id) => id !== userId),
-        });
-
-        toast.success(res.data?.message || "Unfollowed");
-      } else {
-        // Follow
-        const res = await axios.post(
-          `${API_BASE_URL}/api/user/follow/${userId}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        updateUser({
-          following: [...(user.following || []), userId],
-        });
-
-        toast.success(res.data?.message || "Followed");
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(`Failed to ${isFollowing ? "unfollow" : "follow"} user`);
-    }
-  };
 
   // Set token and persist to sessionStorage
   const setToken = (tokenValue) => {
@@ -137,5 +130,4 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-// Custom hook to use the context
 export const useApp = () => useContext(AppContext);
