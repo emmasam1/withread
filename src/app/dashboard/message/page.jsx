@@ -11,7 +11,6 @@ import EmojiPicker from "emoji-picker-react";
 import axios from "axios";
 
 const { TextArea } = Input;
-
 const MotionDiv = dynamic(
   () => import("framer-motion").then((mod) => mod.motion.div),
   { ssr: false }
@@ -23,7 +22,7 @@ const Page = () => {
   const [messages, setMessages] = useState([]);
   const [value, setValue] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [replyToMessage, setReplyToMessage] = useState(null); // For reply
+  const [replyToMessage, setReplyToMessage] = useState(null);
   const { API_BASE_URL, setLoading, token, user, loading } = useApp();
 
   const tabs = [
@@ -55,12 +54,13 @@ const Page = () => {
       const res = await axios.post(
         `${API_BASE_URL}/api/message/send`,
         payLoad,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      console.log("Message Sent:", res.data);
-      setValue(""); // Clear input after send
-      setReplyToMessage(null); // Clear reply box
-      getChats(); // Refresh chat
+      setValue("");
+      setReplyToMessage(null);
+      getChats();
     } catch (error) {
       console.log("Error sending message:", error);
     } finally {
@@ -70,7 +70,6 @@ const Page = () => {
 
   const getChats = async () => {
     if (!API_BASE_URL || !token || !selectedMessage) return;
-
     try {
       setLoading(true);
       const res = await axios.get(
@@ -79,7 +78,6 @@ const Page = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      console.log("Chats:", res.data);
       setMessages(res.data.messages || []);
     } catch (error) {
       console.log("Error fetching chats:", error);
@@ -89,42 +87,38 @@ const Page = () => {
   };
 
   useEffect(() => {
-    if (selectedMessage) {
-      getChats();
-    }
+    if (selectedMessage) getChats();
   }, [selectedMessage]);
 
   const initials = `${selectedMessage?.user?.firstName?.[0] || ""}${
     selectedMessage?.user?.lastName?.[0] || ""
   }`.toUpperCase();
-
   const handleReply = (msg) => setReplyToMessage(msg);
 
   return (
-    <div className="max-h-4/5">
-      <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-7 p-4 max-h-11/12">
-        {/* LEFT - Message List */}
-        <div className="bg-white rounded-lg p-2 flex flex-col max-h-11/12">
-          <div className="flex justify-between items-center flex-shrink-0">
+    <div className="h-[86vh]">
+      <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-7 p-4 h-full">
+        {/* Left Side */}
+        <div className="bg-white rounded-lg p-2 flex flex-col max-h-full">
+          <div className="flex justify-between items-center">
             <h2 className="font-medium">Messages</h2>
             <div className="flex items-center gap-3">
               <Image
                 src="/images/add-circle.png"
-                alt="message icon"
+                alt="Add"
                 width={20}
                 height={20}
               />
               <Image
                 src="/images/setting_black.png"
-                alt="message icon"
+                alt="Settings"
                 width={20}
                 height={20}
               />
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="relative flex bg-gray-100 rounded-full p-1 w-full max-w-md mt-5 flex-shrink-0">
+          <div className="relative flex bg-gray-100 rounded-full p-1 mt-5">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -149,8 +143,8 @@ const Page = () => {
           </div>
         </div>
 
-        {/* RIGHT - Message Viewer */}
-        <div className="bg-white rounded-lg p-4 flex flex-col max-h-11/12">
+        {/* Right Side - Chat */}
+        <div className="bg-white rounded-lg p-4 flex flex-col h-full overflow-hidden">
           {!selectedMessage ? (
             <div className="flex flex-col items-center justify-center mx-auto w-80 flex-1">
               <Image
@@ -159,54 +153,47 @@ const Page = () => {
                 width={160}
                 height={160}
               />
-              <div className="text-center mt-4">
-                <h1 className="font-semibold text-2xl">Select a message</h1>
-                <span className="text-[#333333E5] mt-2 text-xs">
-                  Choose from your existing conversations, start a new one, or
-                  just keep vibing
-                </span>
-              </div>
+              <h1 className="font-semibold text-2xl mt-4">Select a message</h1>
+              <span className="text-[#333333E5] text-xs mt-2 text-center">
+                Choose from your existing conversations, start a new one, or
+                just keep vibing
+              </span>
               <Button className="!bg-black !text-white !rounded-full hover:!text-white !border-none mt-4 p-2">
-                <Image
-                  src="/images/add.png"
-                  alt="Add message"
-                  width={20}
-                  height={20}
-                />
+                <Image src="/images/add.png" alt="Add" width={20} height={20} />
                 Start a new conversation
               </Button>
             </div>
           ) : (
-            <div className="flex flex-col h-full">
-              {/* Header */}
+            <>
+              {/* Chat Header */}
               <div className="flex justify-between items-center border-b border-[#DDDDDD33] pb-3 mb-3 flex-shrink-0">
                 <div className="flex items-center gap-2">
-                  <div className="rounded-full h-11 w-11">
-                    {selectedMessage.user?.avatar ? (
+                  {selectedMessage.user?.avatar ? (
+                    <div className="rounded-full h-11 w-11">
                       <Image
-                        src={selectedMessage.user?.avatar}
-                        alt="user avatar"
-                        width={48}
-                        height={48}
+                        src={selectedMessage.user.avatar}
+                        alt="Avatar"
+                        width={44}
+                        height={44}
                         className="rounded-full h-full w-full object-cover"
                       />
-                    ) : (
-                      <div className="bg-[#F6F6F6] rounded-full w-11 h-11 flex justify-center items-center">
-                        <span className="font-semibold text-gray-400">
-                          {initials}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="bg-[#F6F6F6] w-11 h-11 rounded-full flex items-center justify-center">
+                      <span className="font-semibold text-gray-400">
+                        {initials}
+                      </span>
+                    </div>
+                  )}
                   <h2 className="text-lg font-semibold">
                     {selectedMessage?.user?.username}
                   </h2>
                 </div>
-                <RxDotsVertical className="text-gray-600 cursor-pointer" />
+                <RxDotsVertical className="text-gray-600" />
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto space-y-4">
+              <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                 {messages.map((msg) => {
                   const isMe = msg.sender?._id === user?._id;
                   const time = new Date(
@@ -223,31 +210,31 @@ const Page = () => {
                         isMe ? "items-end" : "items-start"
                       }`}
                     >
-                      <div
-                        className={`max-w-xs p-3 rounded-lg text-sm ${
-                          isMe
-                            ? "bg-black text-white rounded-br-none"
-                            : "bg-gray-100 text-gray-800 rounded-bl-none"
-                        }`}
-                      >
-                        {/* Reply snippet */}
-                        {msg.replyTo && (
-                          <div className="text-xs bg-gray-200 text-gray-700 p-1 rounded mb-1">
-                            Replying to: {msg.replyTo.content}
-                          </div>
-                        )}
-                        {msg.content}
+                      <div>
+                        <div
+                          className={`max-w-xs p-3 rounded-lg text-sm ${
+                            isMe
+                              ? "bg-black text-white rounded-br-none"
+                              : "bg-gray-100 text-gray-800 rounded-bl-none"
+                          }`}
+                        >
+                          {msg.replyTo && (
+                            <div className="text-xs bg-gray-200 text-gray-700 p-1 rounded mb-1">
+                              Replying to: {msg.replyTo.content}
+                            </div>
+                          )}
+                          {msg.content}
+                        </div>
                         <div className="text-xs text-gray-400 mt-1 text-right">
+                        <button
+                          onClick={() => handleReply(msg)}
+                          className="text-xs text-blue-500 mt-1 hover:underline mx-4"
+                        >
+                          Reply
+                        </button>
                           {time}
                         </div>
                       </div>
-                      {/* Reply button */}
-                      <button
-                        onClick={() => handleReply(msg)}
-                        className="text-xs text-blue-500 mt-1 hover:underline"
-                      >
-                        Reply
-                      </button>
                     </div>
                   );
                 })}
@@ -268,14 +255,14 @@ const Page = () => {
                 </div>
               )}
 
-              {/* Message Input */}
-              <div className="mt-3 flex-shrink-0">
-                <div className="w-full bg-gray-100 p-3 rounded-lg">
-                  <div className="w-full flex gap-2">
+              {/* Chat Input */}
+              <div className="mt-3 flex-shrink-0 sticky bottom-0 bg-white pt-2">
+                <div className="bg-gray-100 p-3 rounded-lg">
+                  <div className="flex gap-2">
                     <TextArea
                       value={value}
                       onChange={(e) => setValue(e.target.value)}
-                      placeholder="Type your message here...."
+                      placeholder="Type your message..."
                       autoSize={{ minRows: 3, maxRows: 5 }}
                       className="!bg-transparent !border-none !outline-none w-full focus:!ring-0 focus:!border-none"
                     />
@@ -303,8 +290,8 @@ const Page = () => {
                         <Image
                           src="/images/send.png"
                           alt="Send"
-                          width={13}
-                          height={13}
+                          width={15}
+                          height={15}
                         />
                       </motion.div>
                     </Button>
@@ -314,30 +301,26 @@ const Page = () => {
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                       whileHover={{ scale: 1.2, rotate: 10 }}
                       transition={{ type: "spring", stiffness: 300 }}
-                      className="cursor-pointer"
                     >
                       <Image
                         src="/images/Smile_circle.png"
-                        alt="smile"
+                        alt="Emoji"
                         width={20}
                         height={20}
                         className="cursor-pointer"
                       />
                     </motion.button>
-
                     <Image
                       src="/images/Gallery.png"
-                      alt="gallery"
+                      alt="Gallery"
                       width={20}
                       height={20}
-                      className="cursor-pointer"
                     />
                     <Image
                       src="/images/link.png"
-                      alt="link"
+                      alt="Link"
                       width={20}
                       height={20}
-                      className="cursor-pointer"
                     />
                   </div>
                   {showEmojiPicker && (
@@ -351,7 +334,7 @@ const Page = () => {
                   )}
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
