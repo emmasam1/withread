@@ -9,6 +9,7 @@ import { useApp } from "@/app/context/context";
 import { motion } from "framer-motion";
 import EmojiPicker from "emoji-picker-react";
 import axios from "axios";
+import { ReactionBarSelector } from "@charkour/react-reactions";
 
 const { TextArea } = Input;
 const MotionDiv = dynamic(
@@ -19,10 +20,11 @@ const MotionDiv = dynamic(
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState([]);
   const [value, setValue] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState(null);
+  const [reactioningTo, setReactioningTo] = useState(null);
   const { API_BASE_URL, setLoading, token, user, loading } = useApp();
 
   const tabs = [
@@ -34,6 +36,20 @@ const Page = () => {
     { key: "2", label: "Unread Messages", content: "<UnreadActivities />" },
     { key: "3", label: "Drafts Messages", content: "<ActivitieCommunity />" },
   ];
+
+ const emojiMap = {
+  thumbsup: "👍",
+  heart: "❤️",
+  smile: "😊",
+  laugh: "😂",
+  angry: "😡",
+  cry: "😢",
+  clap: "👏",
+  fire: "🔥",
+  // add more if needed
+};
+
+
 
   const handleEmojiClick = (emojiData) => {
     const emoji = emojiData.emoji;
@@ -51,13 +67,9 @@ const Page = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post(
-        `${API_BASE_URL}/api/message/send`,
-        payLoad,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await axios.post(`${API_BASE_URL}/api/message/send`, payLoad, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setValue("");
       setReplyToMessage(null);
       getChats();
@@ -67,6 +79,62 @@ const Page = () => {
       setLoading(false);
     }
   };
+
+  const getReactions = async (messageId) => {
+    if (!messageId) {
+      console.warn("No messageId provided to getReactions");
+      return [];
+    }
+
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/api/message/${messageId}/reactions`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log(res.data.reactions);
+      return res.data.reactions || [];
+    } catch (error) {
+      console.error("Error fetching reactions:", error);
+      return [];
+    }
+  };
+
+ const reactToMessage = async (messageId, emojiShortCode) => {
+  try {
+    await axios.post(
+      `${API_BASE_URL}/api/message/react/${messageId}`,
+      { emoji: emojiShortCode },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Refresh the entire chat after reacting
+    await getChats();
+  } catch (error) {
+    console.error("Reaction error:", error);
+  } finally {
+    setReactioningTo(null);
+  }
+};
+
+
+
+  // const reactToMessage = async (messageId, emojiShortCode) => {
+  //   try {
+  //     const res = await axios.post(
+  //       `${API_BASE_URL}/api/message/react/${messageId}`,
+  //       { emoji: emojiShortCode },
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     getChats();
+  //     console.log(res);
+  //   } catch (error) {
+  //     console.error("Reaction error:", error);
+  //   } finally {
+  //     setReactioningTo(null);
+  //   }
+  // };
 
   const getChats = async () => {
     if (!API_BASE_URL || !token || !selectedMessage) return;
@@ -78,7 +146,8 @@ const Page = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setMessages(res.data.messages || []);
+      console.log( "this are the selected messages", res);
+      setMessage(res.data.messages || []);
     } catch (error) {
       console.log("Error fetching chats:", error);
     } finally {
@@ -87,18 +156,21 @@ const Page = () => {
   };
 
   useEffect(() => {
-    if (selectedMessage) getChats();
+    if (selectedMessage) {
+      getChats();
+      getReactions(selectedMessage._id);
+    }
   }, [selectedMessage]);
 
   const initials = `${selectedMessage?.user?.firstName?.[0] || ""}${
     selectedMessage?.user?.lastName?.[0] || ""
   }`.toUpperCase();
+
   const handleReply = (msg) => setReplyToMessage(msg);
 
   return (
     <div className="h-[86vh]">
       <div className="grid grid-cols-1 md:grid-cols-[400px_1fr] gap-7 p-4 h-full">
-        {/* Left Side */}
         <div className="bg-white rounded-lg p-2 flex flex-col max-h-full">
           <div className="flex justify-between items-center">
             <h2 className="font-medium">Messages</h2>
@@ -143,7 +215,7 @@ const Page = () => {
           </div>
         </div>
 
-        {/* Right Side - Chat */}
+        {/* Chat Window */}
         <div className="bg-white rounded-lg p-4 flex flex-col h-full overflow-hidden">
           {!selectedMessage ? (
             <div className="flex flex-col items-center justify-center mx-auto w-80 flex-1">
@@ -165,7 +237,6 @@ const Page = () => {
             </div>
           ) : (
             <>
-              {/* Chat Header */}
               <div className="flex justify-between items-center border-b border-[#DDDDDD33] pb-3 mb-3 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   {selectedMessage.user?.avatar ? (
@@ -191,10 +262,10 @@ const Page = () => {
                 </div>
                 <RxDotsVertical className="text-gray-600" />
               </div>
+              
 
-              {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                {messages.map((msg) => {
+                {message.map((msg) => {
                   const isMe = msg.sender?._id === user?._id;
                   const time = new Date(
                     msg.sentAt || msg.createdAt
@@ -210,7 +281,9 @@ const Page = () => {
                         isMe ? "items-end" : "items-start"
                       }`}
                     >
-                      <div>
+
+                     
+                      <div className="relative group">
                         <div
                           className={`max-w-xs p-3 rounded-lg text-sm ${
                             isMe
@@ -224,23 +297,109 @@ const Page = () => {
                             </div>
                           )}
                           {msg.content}
+                          {msg.emojis && msg.emojis.length > 0 && (
+                            <div className="mt-2 flex gap-1 flex-wrap">
+                              {msg.emojis.map((emoji, idx) => (
+                                <span key={idx} className="text-sm">
+                                  {emoji}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+{/* Reaction summary below each message */}
+<div className="flex gap-2 mt-2 flex-wrap">
+  {(() => {
+    const grouped = {};
+
+    // Group reactions by emoji
+    msg.reactions?.forEach((r) => {
+      if (!r || !r.emoji) return;
+      if (!grouped[r.emoji]) grouped[r.emoji] = [];
+      grouped[r.emoji].push(r.user);
+    });
+
+    const emojiEntries = Object.entries(grouped);
+    const maxDisplay = 5;
+    const displayed = emojiEntries.slice(0, maxDisplay);
+    const extraCount = emojiEntries.length - maxDisplay;
+
+    return (
+      <>
+        {displayed.map(([emojiKey, users], idx) => {
+          const isReactedByUser = users.includes(user._id);
+          return (
+            <motion.div
+              key={idx}
+              whileHover={{ scale: 1.1 }}
+              className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 border border-gray-300 ${
+                isReactedByUser ? "bg-blue-100 text-blue-800 font-semibold" : "bg-gray-200"
+              }`}
+            >
+              <span className="text-lg">{emojiMap[emojiKey] || emojiKey}</span>
+              <span>{users.length}</span>
+            </motion.div>
+          );
+        })}
+        {extraCount > 0 && (
+          <div className="px-2 py-1 rounded-full bg-gray-100 text-xs border border-gray-300">
+            +{extraCount}
+          </div>
+        )}
+      </>
+    );
+  })()}
+</div>
+
+
+
+
                         </div>
-                        <div className="text-xs text-gray-400 mt-1 text-right">
-                        <button
-                          onClick={() => handleReply(msg)}
-                          className="text-xs text-blue-500 mt-1 hover:underline mx-4"
-                        >
-                          Reply
-                        </button>
-                          {time}
+                        <div className="mt-1 text-right">
+                          <button
+                            onClick={() => handleReply(msg)}
+                            className="text-xs text-blue-500 mt-1 hover:underline mx-4"
+                          >
+                            Reply
+                          </button>
+                          <Image
+                            src="/images/emoji.png"
+                            alt="React"
+                            width={20}
+                            height={20}
+                            className="inline-block mx-4 cursor-pointer"
+                            onClick={() => setReactioningTo(msg._id)}
+                          />
+                          <span className="text-xs text-gray-400">{time}</span>
                         </div>
+                        
+
+                        {reactioningTo === msg._id && (
+                          <div
+                            className="absolute z-50 top-full left-0 mt-1"
+                            onMouseLeave={() => setReactioningTo(null)}
+                          >
+                            <div className="flex gap-2 bg-white shadow p-2 rounded-full">
+  {Object.entries(emojiMap).map(([name, emoji]) => (
+    <span
+      key={name}
+      className="text-2xl cursor-pointer hover:scale-125 transition-transform"
+      title={name}
+      onClick={() => reactToMessage(msg._id, name)}
+    >
+      {emoji}
+    </span>
+  ))}
+</div>
+
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Reply Preview */}
               {replyToMessage && (
                 <div className="bg-gray-200 text-sm p-2 mb-2 rounded flex justify-between items-center">
                   <span>
@@ -255,7 +414,6 @@ const Page = () => {
                 </div>
               )}
 
-              {/* Chat Input */}
               <div className="mt-3 flex-shrink-0 sticky bottom-0 bg-white pt-2">
                 <div className="bg-gray-100 p-3 rounded-lg">
                   <div className="flex gap-2">
@@ -307,7 +465,6 @@ const Page = () => {
                         alt="Emoji"
                         width={20}
                         height={20}
-                        className="cursor-pointer"
                       />
                     </motion.button>
                     <Image
