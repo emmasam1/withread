@@ -37,19 +37,17 @@ const Page = () => {
     { key: "3", label: "Drafts Messages", content: "<ActivitieCommunity />" },
   ];
 
- const emojiMap = {
-  thumbsup: "👍",
-  heart: "❤️",
-  smile: "😊",
-  laugh: "😂",
-  angry: "😡",
-  cry: "😢",
-  clap: "👏",
-  fire: "🔥",
-  // add more if needed
-};
-
-
+  const emojiMap = {
+    thumbsup: "👍",
+    heart: "❤️",
+    smile: "😊",
+    laugh: "😂",
+    angry: "😡",
+    cry: "😢",
+    clap: "👏",
+    fire: "🔥",
+    // add more if needed
+  };
 
   const handleEmojiClick = (emojiData) => {
     const emoji = emojiData.emoji;
@@ -101,40 +99,22 @@ const Page = () => {
     }
   };
 
- const reactToMessage = async (messageId, emojiShortCode) => {
-  try {
-    await axios.post(
-      `${API_BASE_URL}/api/message/react/${messageId}`,
-      { emoji: emojiShortCode },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  const reactToMessage = async (messageId, emojiShortCode) => {
+    try {
+      await axios.post(
+        `${API_BASE_URL}/api/message/react/${messageId}`,
+        { emoji: emojiShortCode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    // Refresh the entire chat after reacting
-    await getChats();
-  } catch (error) {
-    console.error("Reaction error:", error);
-  } finally {
-    setReactioningTo(null);
-  }
-};
-
-
-
-  // const reactToMessage = async (messageId, emojiShortCode) => {
-  //   try {
-  //     const res = await axios.post(
-  //       `${API_BASE_URL}/api/message/react/${messageId}`,
-  //       { emoji: emojiShortCode },
-  //       { headers: { Authorization: `Bearer ${token}` } }
-  //     );
-  //     getChats();
-  //     console.log(res);
-  //   } catch (error) {
-  //     console.error("Reaction error:", error);
-  //   } finally {
-  //     setReactioningTo(null);
-  //   }
-  // };
+      // Refresh the entire chat after reacting
+      await getChats();
+    } catch (error) {
+      console.error("Reaction error:", error);
+    } finally {
+      setReactioningTo(null);
+    }
+  };
 
   const getChats = async () => {
     if (!API_BASE_URL || !token || !selectedMessage) return;
@@ -146,7 +126,7 @@ const Page = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      console.log( "this are the selected messages", res);
+      console.log("this are the selected messages", res);
       setMessage(res.data.messages || []);
     } catch (error) {
       console.log("Error fetching chats:", error);
@@ -262,7 +242,6 @@ const Page = () => {
                 </div>
                 <RxDotsVertical className="text-gray-600" />
               </div>
-              
 
               <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                 {message.map((msg) => {
@@ -281,8 +260,6 @@ const Page = () => {
                         isMe ? "items-end" : "items-start"
                       }`}
                     >
-
-                     
                       <div className="relative group">
                         <div
                           className={`max-w-xs p-3 rounded-lg text-sm ${
@@ -307,58 +284,75 @@ const Page = () => {
                             </div>
                           )}
 
-{/* Reaction summary below each message */}
-<div className="flex gap-2 mt-2 flex-wrap">
-  {(() => {
-    const grouped = {};
+                          <div className="mt-2 flex items-center gap-2">
+                            {(() => {
+                              const grouped = {};
 
-    // Group reactions by emoji
-    msg.reactions?.forEach((r) => {
-      if (!r || !r.emoji) return;
-      if (!grouped[r.emoji]) grouped[r.emoji] = [];
-      grouped[r.emoji].push(r.user);
-    });
+                              // Group reactions by emoji
+                              msg.reactions?.forEach((r) => {
+                                if (!r?.emoji) return;
+                                if (!grouped[r.emoji]) grouped[r.emoji] = [];
+                                grouped[r.emoji].push(r.user);
+                              });
 
-    const emojiEntries = Object.entries(grouped);
-    const maxDisplay = 5;
-    const displayed = emojiEntries.slice(0, maxDisplay);
-    const extraCount = emojiEntries.length - maxDisplay;
+                              const emojiEntries = Object.entries(grouped);
+                              const maxDisplay = 5;
+                              const displayed = emojiEntries.slice(
+                                0,
+                                maxDisplay
+                              );
+                              const extraCount =
+                                emojiEntries.length - maxDisplay;
 
-    return (
-      <>
-        {displayed.map(([emojiKey, users], idx) => {
-          const isReactedByUser = users.includes(user._id);
-          return (
-            <motion.div
-              key={idx}
-              whileHover={{ scale: 1.1 }}
-              className={`px-2 py-1 rounded-full text-xs flex items-center gap-1 border border-gray-300 ${
-                isReactedByUser ? "bg-blue-100 text-blue-800 font-semibold" : "bg-gray-200"
-              }`}
-            >
-              <span className="text-lg">{emojiMap[emojiKey] || emojiKey}</span>
-              <span>{users.length}</span>
-            </motion.div>
-          );
-        })}
-        {extraCount > 0 && (
-          <div className="px-2 py-1 rounded-full bg-gray-100 text-xs border border-gray-300">
-            +{extraCount}
-          </div>
-        )}
-      </>
-    );
-  })()}
-</div>
+                              // Total count from all emojis
+                              const totalCount = emojiEntries.reduce(
+                                (acc, [_, users]) => acc + users.length,
+                                0
+                              );
 
+                              return (
+                                <div className="flex items-center gap-2">
+                                  {/* Emoji stack */}
+                                  <div className="flex flex-row-reverse space-x-reverse space-x-[-6px] relative">
+                                    {displayed.map(([emojiKey], idx) => (
+                                      <motion.div
+                                        key={idx}
+                                        whileHover={{ scale: 1.1 }}
+                                        className="w-6 h-6 flex items-center justify-center rounded-full shadow-sm bg-white text-lg"
+                                        transition={{
+                                          type: "spring",
+                                          stiffness: 300,
+                                        }}
+                                      >
+                                        {emojiMap[emojiKey] || emojiKey}
+                                      </motion.div>
+                                    ))}
 
-
-
+                                    {/* If more than maxDisplay emojis, show +N */}
+                                    {extraCount > 0 && (
+                                      <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 text-[10px] font-medium border">
+                                        +{extraCount}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {/* Total count */}
+                                  <div
+                                    className={`text-sm font-semibold text-gray-700 ${
+                                      isMe ? "text-white" : ""
+                                    }`}
+                                  >
+                                    {totalCount}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </div>
+
                         <div className="mt-1 text-right">
                           <button
                             onClick={() => handleReply(msg)}
-                            className="text-xs text-blue-500 mt-1 hover:underline mx-4"
+                            className="text-xs text-blue-500 mt-1 hover:underline mx-2"
                           >
                             Reply
                           </button>
@@ -367,12 +361,13 @@ const Page = () => {
                             alt="React"
                             width={20}
                             height={20}
-                            className="inline-block mx-4 cursor-pointer"
+                            className="inline-block mx-2 cursor-pointer"
                             onClick={() => setReactioningTo(msg._id)}
                           />
-                          <span className="text-xs text-gray-400">{time}</span>
+                          <span className="text-xs text-gray-400 mx-2">
+                            {time}
+                          </span>
                         </div>
-                        
 
                         {reactioningTo === msg._id && (
                           <div
@@ -380,18 +375,17 @@ const Page = () => {
                             onMouseLeave={() => setReactioningTo(null)}
                           >
                             <div className="flex gap-2 bg-white shadow p-2 rounded-full">
-  {Object.entries(emojiMap).map(([name, emoji]) => (
-    <span
-      key={name}
-      className="text-2xl cursor-pointer hover:scale-125 transition-transform"
-      title={name}
-      onClick={() => reactToMessage(msg._id, name)}
-    >
-      {emoji}
-    </span>
-  ))}
-</div>
-
+                              {Object.entries(emojiMap).map(([name, emoji]) => (
+                                <span
+                                  key={name}
+                                  className="text-2xl cursor-pointer hover:scale-125 transition-transform"
+                                  title={name}
+                                  onClick={() => reactToMessage(msg._id, name)}
+                                >
+                                  {emoji}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
