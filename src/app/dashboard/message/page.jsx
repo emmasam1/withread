@@ -341,7 +341,7 @@ const Page = () => {
                                       isMe ? "text-white" : ""
                                     }`}
                                   >
-                                    {totalCount}
+                                    {/* {totalCount} */}
                                   </div>
                                 </div>
                               );

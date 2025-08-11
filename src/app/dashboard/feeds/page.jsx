@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Button, Dropdown, Skeleton, Space, Modal } from "antd";
+import {
+  Button,
+  Dropdown,
+  Skeleton,
+  Space,
+  Modal,
+  Form,
+  Input,
+  Select,
+} from "antd";
 import Image from "next/image";
 import axios from "axios";
 import { useApp } from "../../context/context";
@@ -21,17 +30,53 @@ const ForYou = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [blockUserId, seBlockUserId] = useState(false);
-
-  console.log(posts);
+  const [reportModal, setReportModal] = useState(false);
+  const [toReport, setToReport] = useState(null);
+  const [form] = Form.useForm();
 
   const showModal = (post) => {
     setSelectedPost(post);
     setIsModalOpen(true);
   };
 
+  console.log(user)
+
   const handleCancel = () => {
     setIsModalOpen(false);
     setSelectedPost(null);
+  };
+
+  const handleReportModal = () => {
+    setReportModal(false);
+    form.resetFields();
+  };
+
+  const reportPost = (post) => {
+    setToReport(post);
+    setReportModal(true);
+  };
+
+  const handleReportSubmit = async (values) => {
+    try {
+      const { reason, target } = values;
+      const { type: entityType, id: entityId } = JSON.parse(target);
+
+      const payload = {
+        entityType,
+        entityId,
+        reason,
+      };
+
+      const res = await axios.post(`${API_BASE_URL}/api/report`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      }); // adjust the URL if needed
+      console.log(res);
+      toast.success(res.data.mesage)
+      handleReportModal();
+    } catch (error) {
+      console.error("Reporting failed:", error);
+      toast.error("Failed to report. Please try again.");
+    }
   };
 
   const fetchPosts = async (pageNumber = 1, reset = false) => {
@@ -173,11 +218,9 @@ const ForYou = () => {
     setLoadingUserId(null);
   };
 
-  console.log("Current following list:", user?.following);
-
-  useEffect(() => {
-    console.log("User context updated:", user);
-  }, [user]);
+  // useEffect(() => {
+  //   console.log("User context updated:", user);
+  // }, [user]);
 
   const AvatarPlaceholder = ({ text }) => (
     <h1 className="font-semibold text-gray-400">{text}</h1>
@@ -271,6 +314,64 @@ const ForYou = () => {
         )}
       </Modal>
 
+      <Modal
+        open={reportModal}
+        onCancel={handleReportModal}
+        footer={null}
+        title="Report Post or User"
+        closable
+        centered
+        className="!p-8"
+      >
+        <Form form={form} layout="vertical" onFinish={handleReportSubmit}>
+          <Form.Item
+            label="Select an option"
+            name="target"
+            rules={[{ required: true, message: "Please select an option!" }]}
+          >
+            <Select
+              placeholder="Select what you're reporting"
+              options={[
+                {
+                  value: JSON.stringify({
+                    type: "User",
+                    id: toReport?.author?._id,
+                  }),
+                  label: "Report User",
+                  disabled: !toReport?.author?._id,
+                },
+                {
+                  value: JSON.stringify({
+                    type: "Post",
+                    id: toReport?._id,
+                  }),
+                  label: "Report Post",
+                  disabled: !toReport?._id,
+                },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Reason"
+            name="reason"
+            rules={[{ required: true, message: "Please add your reason!" }]}
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="Enter a reason"
+              className="!resize-none"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" className="!bg-black text-white hover:!bg-black !rounded-full">
+              Submit Report
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
       {posts.map((post, index) => {
         const isLastPost = posts.length === index + 1;
         const initials = `${post?.author?.firstName?.[0] || ""}${
@@ -296,15 +397,13 @@ const ForYou = () => {
             key: "3",
             onClick: () => showModal(post),
           },
-          { label: "Report", key: "4" },
+          { label: "Report", key: "4", onClick: () => reportPost(post) },
           { label: "Show fewer posts like this", key: "5" },
         ];
 
         let follow_text = user?.following?.includes(post?.author?._id)
           ? "Following"
           : "Follow";
-
-        console.log(user?.following, "=============", post?.author?._id);
 
         return (
           <div

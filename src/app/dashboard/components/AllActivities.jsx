@@ -1,9 +1,15 @@
 "use client";
+import { useApp } from "@/app/context/context";
 import { Button } from "antd";
+import axios from "axios";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 
 const AllActivities = () => {
+  const { API_BASE_URL, setLoading, loading, user, token } = useApp();
+  const [userWarning, setUserWarning] = useState([])
+
   const notifications = [
     {
       id: 1,
@@ -93,6 +99,27 @@ const AllActivities = () => {
       read: false,
     },
   ];
+
+  const getActivities = async() => {
+    try {
+      setLoading(true)
+      const res = await axios.get(`${API_BASE_URL}/api/activity/activities`,{
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setUserWarning(res?.data?.activities)
+      console.log(res)
+    } catch (error) {
+      console.log(error)
+    }finally{
+      setLoading(false)
+    }
+  }
+
+  useEffect(()=> {
+    if(!token) return
+    getActivities()
+  }, [token])
+
 
   const [responseState, setResponseState] = useState({}); // { [id]: { loading: boolean, accepted: boolean } }
 

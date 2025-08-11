@@ -14,7 +14,7 @@ const Privacy = () => {
   const [displayTheme, setDisplayTheme] = useState("Light");
 
   return (
-    <div className="p-6 space-y-0">
+    <div className="p-6 space-y-0 dark:bg-dark-800 dark:text-white">
       {/* Allow People to Follow */}
       <div className="flex justify-between items-start py-5 border-b border-[#D0D0D033]">
         <div>

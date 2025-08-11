@@ -1,10 +1,33 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import { GoArrowLeft } from "react-icons/go";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "antd";
+import axios from "axios";
+import { useApp } from "@/app/context/context";
 
 const page = () => {
+  const { API_BASE_URL, setLoading, loading, user, token } = useApp();
+  const [topCreators, setTopCretors] = useState([])
+
+  const getTopCreators = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/user/top-creators`);
+      console.log(res.data.data);
+      setTopCretors(res?.data?.data)
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getTopCreators();
+  }, [API_BASE_URL]);
+
   const people = [
     {
       name: "Jameson Michelle",
@@ -95,7 +118,7 @@ const page = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
           {/* Card 1 */}
-          {people.map((person) => {
+          {topCreators.map((person) => {
             return (
               <div className="bg-white flex items-center gap-4">
                 <div className="h-40 w-50 rounded-lg">
@@ -111,7 +134,7 @@ const page = () => {
                   <div className="flex justify-between">
                     <div>
                       <h1 className="font-semibold capitalize">
-                        {person.name}
+                        {person.firstName} {person.lastName}
                       </h1>
                       <span className="mt-2 text-[#333333E5] text-[.8rem]">
                         {person.role}

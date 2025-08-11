@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { LaptopOutlined, BulbOutlined, MoonOutlined } from '@ant-design/icons';
+import { useApp } from '@/app/context/context';
 
 const options = [
   { label: 'System', icon: <LaptopOutlined />, value: 'System' },
@@ -9,16 +10,18 @@ const options = [
   { label: 'Dark', icon: <MoonOutlined />, value: 'Dark' },
 ];
 
-const DisplayThemeSelector = ({ value, onChange }) => {
+const DisplayThemeSelector = () => {
+    const { theme, updateTheme, } = useApp();
+
   return (
     <div className="theme-selector">
       {options.map((opt) => {
-        const isSelected = value === opt.value;
+        const isSelected = theme === opt.value;
         return (
           <button
             key={opt.value}
             className={`theme-button ${isSelected ? 'selected' : ''}`}
-            onClick={() => onChange(opt.value)}
+            onClick={() => updateTheme(opt.value)}
           >
             {opt.icon}
             <span>{opt.label}</span>
