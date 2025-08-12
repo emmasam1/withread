@@ -20,13 +20,13 @@ const Page = () => {
 
   return (
     <div className="p-3">
-      {/* Tabs */}
       <div className="bg-white rounded-lg p-3">
-        <div className="relative flex bg-gray-100 rounded-full p-1 mb-4">
+        {/* Tabs */}
+        <div className="relative flex flex-wrap bg-gray-100 rounded-full p-1 mb-4 gap-1 sm:gap-0">
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              className={`flex-1 text-sm z-10 py-2 font-medium transition-colors ${
+              className={`flex-1 text-xs sm:text-sm md:text-base z-10 py-2 px-1 sm:px-2 font-medium transition-colors text-center ${
                 activeTab === tab.key ? "text-black" : "text-gray-400"
               }`}
               onClick={() => setActiveTab(tab.key)}
@@ -35,11 +35,11 @@ const Page = () => {
             </button>
           ))}
 
-          {/* Animated indicator */}
+          {/* Animated Indicator */}
           <motion.div
             layout
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="absolute top-0 h-full bg-white rounded-full shadow z-0"
+            className="absolute top-0 h-full bg-white rounded-full shadow z-0 hidden sm:block"
             style={{
               width: `${100 / tabs.length}%`,
               left: `${(parseInt(activeTab) - 1) * (100 / tabs.length)}%`,
@@ -48,7 +48,7 @@ const Page = () => {
         </div>
 
         {/* Content */}
-        <div className="text-gray-700 text-sm">
+        <div className="text-gray-700 text-xs sm:text-sm md:text-base">
           {tabs.find((tab) => tab.key === activeTab)?.content}
         </div>
       </div>
