@@ -39,8 +39,6 @@ const ForYou = () => {
     setIsModalOpen(true);
   };
 
-  console.log(user)
-
   const handleCancel = () => {
     setIsModalOpen(false);
     setSelectedPost(null);
@@ -71,7 +69,7 @@ const ForYou = () => {
         headers: { Authorization: `Bearer ${token}` },
       }); // adjust the URL if needed
       console.log(res);
-      toast.success(res.data.mesage)
+      toast.success(res.data.mesage);
       handleReportModal();
     } catch (error) {
       console.error("Reporting failed:", error);
@@ -365,7 +363,11 @@ const ForYou = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" className="!bg-black text-white hover:!bg-black !rounded-full">
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="!bg-black text-white hover:!bg-black !rounded-full"
+            >
               Submit Report
             </Button>
           </Form.Item>
@@ -409,20 +411,20 @@ const ForYou = () => {
           <div
             key={post._id}
             ref={isLastPost ? lastPostRef : null}
-            className="rounded-lg p-4 shadow-md w-full mx-auto bg-white"
+            className="rounded-lg p-4 shadow-md w-full max-w-3xl mx-auto bg-white"
           >
             {/* Header */}
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
               <div className="flex items-center gap-3">
                 {post.isAnonymous ? (
                   <AvatarPlaceholder text="Anonymous" />
                 ) : post.author?.avatar ? (
-                  <div className="w-10 h-10 rounded-full">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden">
                     <Image
                       src={post.author.avatar}
                       alt="user image"
-                      width={45}
-                      height={45}
+                      width={48}
+                      height={48}
                       className="rounded-full object-cover w-full h-full"
                     />
                   </div>
@@ -432,7 +434,7 @@ const ForYou = () => {
                   </div>
                 )}
                 <div>
-                  <p className="font-medium text-gray-800">
+                  <p className="font-medium text-gray-800 text-sm sm:text-base">
                     {post.isAnonymous
                       ? ""
                       : `${post.author?.firstName} ${post.author?.lastName}`}
@@ -452,7 +454,7 @@ const ForYou = () => {
                       loading={loadingUserId === post?.author?._id}
                       onClick={() => handleFollowToggle(post?.author?._id)}
                       type="text"
-                      className="!px-3 !bg-black !text-white !rounded-full"
+                      className="!px-3 !bg-black !text-white !rounded-full text-xs sm:text-sm"
                     >
                       {follow_text}
                     </Button>
@@ -476,35 +478,27 @@ const ForYou = () => {
             </div>
 
             {/* Image */}
-            {post.images?.length > 0 ? (
-              <div className="my-3">
-                <Image
-                  src={post.images[0]}
-                  alt="Post image"
-                  width={800}
-                  height={300}
-                  className="rounded w-full object-cover mb-2 max-h-130 object-top"
-                />
-              </div>
-            ) : (
-              <div className="my-3">
-                <Image
-                  src="/images/no-image.jpg"
-                  alt="No image"
-                  width={800}
-                  height={300}
-                  className="rounded w-full object-cover mb-2 max-h-130 object-top"
-                />
-              </div>
-            )}
+            <div className="my-3">
+              <Image
+                src={
+                  post.images?.length > 0
+                    ? post.images[0]
+                    : "/images/placeholder-image.png"
+                }
+                alt="Post image"
+                width={800}
+                height={300}
+                className="rounded w-full object-cover mb-2 max-h-[300px] sm:max-h-[400px] object-top"
+              />
+            </div>
 
             {/* Content */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">
                 {post.title || "Untitled"}
               </h2>
 
-              <p className="text-sm text-gray-700 mb-2">
+              <p className="text-sm sm:text-base text-gray-700 mb-2">
                 {post.content.slice(0, 100)}...
                 <Link
                   href={`/dashboard/feeds/${post._id}`}
@@ -516,15 +510,14 @@ const ForYou = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex justify-between items-center mt-3">
-              <div className="flex gap-6 items-center">
+            <div className="flex flex-wrap sm:flex-nowrap justify-between items-center mt-3 gap-3 text-xs sm:text-sm">
+              {/* Left side actions */}
+              <div className="flex flex-nowrap gap-3 items-center">
                 <button
                   onClick={() => handleLikeDislike(post._id)}
-                  className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
-                    isLiked
-                      ? "bg-blue-100 text-blue-600"
-                      : "bg-gray-300 text-gray-800"
-                  } ${likedAnimation === post._id ? "scale-110" : "scale-100"}`}
+                  className={`cursor-pointer flex items-center gap-1 rounded-full py-1 px-3 transition-all duration-300 whitespace-nowrap
+        ${isLiked ? "bg-blue-100 text-blue-600" : "bg-gray-300 text-gray-800"}
+        ${likedAnimation === post._id ? "scale-110" : "scale-100"}`}
                 >
                   <Image
                     src="/images/like.png"
@@ -536,18 +529,21 @@ const ForYou = () => {
                   <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                   {post.likes.length}
                 </button>
-                <Link href={`/dashboard/feeds/${post._id}`}>
-                  <p className="flex items-center gap-1 text-xs cursor-pointer">
-                    <Image
-                      src="/images/comment.png"
-                      alt="comment icon"
-                      width={15}
-                      height={15}
-                    />
-                    Comment
-                  </p>
+
+                <Link
+                  href={`/dashboard/feeds/${post._id}`}
+                  className="flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                >
+                  <Image
+                    src="/images/comment.png"
+                    alt="comment icon"
+                    width={15}
+                    height={15}
+                  />
+                  Comment
                 </Link>
-                <p className="flex items-center gap-1 text-xs">
+
+                <div className="flex items-center gap-1 cursor-pointer whitespace-nowrap">
                   <Image
                     src="/images/share.png"
                     alt="share icon"
@@ -555,9 +551,11 @@ const ForYou = () => {
                     height={15}
                   />
                   Share
-                </p>
+                </div>
               </div>
-              <div className="flex gap-1.5 text-xs items-center">
+
+              {/* Right side stats */}
+              <div className="flex gap-2 items-center whitespace-nowrap">
                 <p>{post.comments.length} Comments</p>
                 <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                 <p>{post.views || 0} Impressions</p>
