@@ -143,7 +143,7 @@ const TrendingContents = () => {
                     src={
                       trend.images && trend.images.length > 0
                         ? trend.images[0]
-                        : "/images/no-image.jpg"
+                        : "/images/placeholder-image.png"
                     }
                     alt="Post"
                     width={100}

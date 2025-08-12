@@ -5,7 +5,6 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { applyTheme } from "../../../utils/theme";
 
-
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
@@ -15,20 +14,21 @@ export const AppProvider = ({ children }) => {
   const [token, setTokenState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [draftLoading, setDraftLoading] = useState(false);
-  // Add this inside your AppProvider
-   const [theme, setTheme] = useState('System');
+  const [theme, setTheme] = useState("System");
 
+  // Load theme on mount
   useEffect(() => {
-    const storedTheme = localStorage.getItem('theme') || 'System';
+    const storedTheme = localStorage.getItem("theme") || "System";
     setTheme(storedTheme);
     applyTheme(storedTheme);
   }, []);
 
   const updateTheme = (newTheme) => {
     setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+    localStorage.setItem("theme", newTheme);
     applyTheme(newTheme);
   };
+
   // Load user and token from sessionStorage on mount
   useEffect(() => {
     try {
@@ -57,7 +57,7 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // ✅ FIXED: updateUser merges the previous user object properly
+  // Merge update to user
   const updateUser = (newUserData) => {
     setUserState((prevUser) => {
       const updatedUser = { ...prevUser, ...newUserData };
@@ -66,7 +66,7 @@ export const AppProvider = ({ children }) => {
     });
   };
 
-  // ✅ Toggle follow/unfollow logic
+  // Toggle follow/unfollow
   const toggleFollowUser = async (userId) => {
     if (!token || !user) {
       toast.error("You must be logged in to follow users.");
@@ -100,15 +100,12 @@ export const AppProvider = ({ children }) => {
     } catch (error) {
       console.error("Follow toggle failed:", error.response?.data || error);
       toast.error(error.response?.data?.message || "Action failed.");
-
       // Rollback on error
-      updateUser({
-        following: user.following,
-      });
+      updateUser({ following: user.following });
     }
   };
 
-  // Set token and persist to sessionStorage
+  // Set token and persist
   const setToken = (tokenValue) => {
     if (tokenValue) {
       sessionStorage.setItem("token", tokenValue);

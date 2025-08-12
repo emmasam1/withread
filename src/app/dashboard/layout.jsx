@@ -120,39 +120,44 @@ export default function DashboardLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // load user from sessionStorage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = sessionStorage.getItem("user");
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (error) {
-          console.error("Error parsing stored user:", error);
-        }
+ // Load user from sessionStorage once on mount
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
       }
     }
-  }, [setUser]);
+  }
+  // We only need this on mount, so no dependencies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
-  // detect mobile
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+// Detect mobile screen size
+useEffect(() => {
+  const handleResize = () => setIsMobile(window.innerWidth < 768);
+  handleResize(); // Check immediately on mount
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, []);
 
-  // close mobile drawer when route changes
-  useEffect(() => {
-    if (isMobile) setMobileOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+// Close mobile drawer when route changes
+useEffect(() => {
+  if (isMobile) {
+    setMobileOpen(false);
+  }
+}, [pathname, isMobile]);
 
-  // prevent body scroll when mobile drawer open
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.body.style.overflow = mobileOpen ? "hidden" : "auto";
-    }
-  }, [mobileOpen]);
+// Prevent body scroll when mobile drawer is open
+useEffect(() => {
+  if (typeof document !== "undefined") {
+    document.body.style.overflow = mobileOpen ? "hidden" : "auto";
+  }
+}, [mobileOpen]);
+
 
   const siderWidth = collapsed ? 80 : 200;
 
