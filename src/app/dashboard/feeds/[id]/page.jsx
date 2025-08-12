@@ -45,6 +45,16 @@ export default function Page() {
   const [comments, setComments] = useState([]);
   const [savedPost, setSavedPost] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
+  const [dropdownPlacement, setDropdownPlacement] = useState("bottomRight");
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDropdownPlacement(window.innerWidth < 480 ? "bottom" : "bottomRight");
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const tabs = [
     { key: "1", label: "Open" },
@@ -305,13 +315,16 @@ export default function Page() {
                     <AvatarPlaceholder text="A" />
                   </div>
                 ) : post.author?.avatar ? (
-                  <Image
+                  <div className="rounded-full h-10 w-10 overflow-hidden">
+                     <Image
                     src={post.author.avatar}
                     alt="User"
                     width={48}
                     height={48}
-                    className="rounded-full"
+                    className="object-cover h-full w-full rounded-full"
                   />
+                  </div>
+                 
                 ) : (
                   <div className="bg-[#F6F6F6] rounded-full w-12 h-12 flex items-center justify-center">
                     <AvatarPlaceholder text={initials} />
@@ -330,16 +343,31 @@ export default function Page() {
                 </div>
               </div>
 
-              <Dropdown menu={{ items: menuItems }} placement="bottomRight">
-                <Space className="cursor-pointer">
+              <Dropdown
+                menu={{ items: menuItems }}
+                // placement={dropdownPlacement}
+                autoAdjustOverflow={true}
+                trigger={["click"]}
+                // overlayClassName="custom-dropdown"
+              >
+                <Space className="cursor-pointer hover:opacity-80 transition">
                   <Image
                     src="/images/Frame.png"
                     alt="Options"
-                    width={18}
-                    height={12}
+                    width={20}
+                    height={20}
                   />
                 </Space>
               </Dropdown>
+
+              {/* <Dropdown menu={{ items }}>
+    <a onClick={(e) => e.preventDefault()}>
+      <Space>
+        Hover me
+        <DownOutlined />
+      </Space>
+    </a>
+  </Dropdown> */}
             </div>
 
             {/* Post Image */}
@@ -360,8 +388,9 @@ export default function Page() {
             </p>
 
             {/* Footer */}
-            <div className="flex justify-between items-center mt-3">
-              <div className="flex gap-6 items-center">
+            <div className="flex flex-wrap justify-between items-center mt-3 gap-3">
+              {/* Left actions */}
+              <div className="flex flex-wrap gap-6 items-center">
                 <button
                   onClick={handleLikeDislike}
                   className={`cursor-pointer flex items-center gap-1 text-xs rounded-full py-1 px-3 transition-all duration-300 ${
@@ -380,6 +409,7 @@ export default function Page() {
                   <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                   {post.likes.length}
                 </button>
+
                 <p className="flex items-center gap-1 text-xs">
                   <Image
                     src="/images/comment.png"
@@ -389,6 +419,7 @@ export default function Page() {
                   />
                   Comments
                 </p>
+
                 <p className="flex items-center gap-1 text-xs">
                   <Image
                     src="/images/share.png"
@@ -399,7 +430,9 @@ export default function Page() {
                   Share
                 </p>
               </div>
-              <div className="flex gap-1.5 text-xs items-center">
+
+              {/* Right actions */}
+              <div className="flex flex-wrap gap-1.5 text-xs items-center">
                 <Button
                   onClick={toggleSavePost}
                   loading={loading}

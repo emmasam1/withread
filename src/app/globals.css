@@ -26,10 +26,10 @@ body {
 }
 .ant-dropdown .ant-dropdown-menu {
   /* background-color: #0a0e16; */
-  width: 200px;
+  /* width: 200px;
   position: absolute;
   bottom: -16px;
-  right: -220px;
+  right: -220px; */
 }
 /* Style the editor toolbar */
 .p-editor-toolbar {
@@ -117,3 +117,5 @@ body {
   background: #fff;
   z-index: 0;
 }
+
+
