@@ -22,6 +22,8 @@ import {
   Dropdown,
   Spin,
   Empty,
+  Badge,
+  Skeleton,
 } from "antd";
 import Image from "next/image";
 import { useApp } from "../context/context";
@@ -33,7 +35,7 @@ import { useRouter, usePathname } from "next/navigation";
 const { Header, Sider, Content } = Layout;
 
 export default function DashboardLayout({ children }) {
-  const { API_BASE_URL, setLoading, loading, setUser, user, setToken } =
+  const { API_BASE_URL, setLoading, loading, setUser, user, setToken, token } =
     useApp();
   const router = useRouter();
   const pathname = usePathname();
@@ -43,6 +45,54 @@ export default function DashboardLayout({ children }) {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [count, setCount] = useState(0);
+  const [loadNotification, setLoadNotification] = useState(false);
+
+  const fetchNotifications = async () => {
+    setLoadNotification(true);
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/api/activity/activities?_limit=5`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setNotifications(res.data?.activities);
+      setCount(res?.data?.total);
+      console.log(res.data?.activities);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadNotification(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [token]);
+
+ const dropdownContent = (
+  <div style={{ width: 300 }} className="bg-white p-3">
+    {loadNotification ? (
+      <Skeleton active paragraph={{ rows: 3 }} />
+    ) : notifications.length > 0 ? (
+      <div>
+        {notifications.map((item, idx) => (
+          <div key={item._id || idx} className="p-2 border-b last:border-b-0">
+            <div className="font-semibold">{item.action}</div>
+            <div className="text-xs text-gray-500">
+              On {new Date(item.createdAt).toLocaleString()}
+            </div>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-center text-gray-500 py-4">No notifications</p>
+    )}
+  </div>
+);
+
 
   const searchRef = useRef(null);
   const debounceRef = useRef(null);
@@ -120,44 +170,43 @@ export default function DashboardLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // load user from sessionStorage on mount
- // Load user from sessionStorage once on mount
-useEffect(() => {
-  if (typeof window !== "undefined") {
-    const storedUser = sessionStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Error parsing stored user:", error);
+  // Load user from sessionStorage once on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = sessionStorage.getItem("user");
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error("Error parsing stored user:", error);
+        }
       }
     }
-  }
-  // We only need this on mount, so no dependencies
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+    // We only need this on mount, so no dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-// Detect mobile screen size
-useEffect(() => {
-  const handleResize = () => setIsMobile(window.innerWidth < 768);
-  handleResize(); // Check immediately on mount
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
+  // Detect mobile screen size
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize(); // Check immediately on mount
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-// Close mobile drawer when route changes
-useEffect(() => {
-  if (isMobile) {
-    setMobileOpen(false);
-  }
-}, [pathname, isMobile]);
+  // Close mobile drawer when route changes
+  useEffect(() => {
+    if (isMobile) {
+      setMobileOpen(false);
+    }
+  }, [pathname, isMobile]);
 
-// Prevent body scroll when mobile drawer is open
-useEffect(() => {
-  if (typeof document !== "undefined") {
-    document.body.style.overflow = mobileOpen ? "hidden" : "auto";
-  }
-}, [mobileOpen]);
-
+  // Prevent body scroll when mobile drawer is open
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = mobileOpen ? "hidden" : "auto";
+    }
+  }, [mobileOpen]);
 
   const siderWidth = collapsed ? 80 : 200;
 
@@ -314,7 +363,12 @@ useEffect(() => {
       key: "2",
       label: (
         <a className="flex items-center gap-3">
-          <Image src="/images/User_menu.png" alt="icon" width={17} height={10} />
+          <Image
+            src="/images/User_menu.png"
+            alt="icon"
+            width={17}
+            height={10}
+          />
           Account Settings
         </a>
       ),
@@ -323,7 +377,12 @@ useEffect(() => {
       key: "3",
       label: (
         <a className="flex items-center gap-3">
-          <Image src="/images/Headphones.png" alt="icon" width={17} height={10} />
+          <Image
+            src="/images/Headphones.png"
+            alt="icon"
+            width={17}
+            height={10}
+          />
           Help Support
         </a>
       ),
@@ -389,7 +448,9 @@ useEffect(() => {
       >
         {/* Close icon inside sider for mobile */}
         {isMobile && mobileOpen && (
-          <div style={{ position: "absolute", right: 10, top: 12, zIndex: 310 }}>
+          <div
+            style={{ position: "absolute", right: 10, top: 12, zIndex: 310 }}
+          >
             <Button
               type="text"
               onClick={() => setMobileOpen(false)}
@@ -453,7 +514,11 @@ useEffect(() => {
         {/* User dropdown at bottom */}
         {user ? (
           <div className="absolute bottom-5 px-4 w-full">
-            <Dropdown menu={{ items: dropdownItems }} placement="topLeft" trigger={["click"]}>
+            <Dropdown
+              menu={{ items: dropdownItems }}
+              placement="topLeft"
+              trigger={["click"]}
+            >
               <div className="flex items-center gap-2 cursor-pointer">
                 {user?.avatar ? (
                   <div className="rounded-full w-12 h-12 overflow-hidden">
@@ -471,12 +536,20 @@ useEffect(() => {
                   </div>
                 )}
                 <div>
-                  <h1 className={`${collapsed ? "hidden" : "block"} font-semibold`}>
+                  <h1
+                    className={`${
+                      collapsed ? "hidden" : "block"
+                    } font-semibold`}
+                  >
                     {user?.firstName}
                   </h1>
                 </div>
                 <RightCircleOutlined
-                  className={`${collapsed ? "hidden" : "block relative -right-5 text-[#D9D9D9]"}`}
+                  className={`${
+                    collapsed
+                      ? "hidden"
+                      : "block relative -right-5 text-[#D9D9D9]"
+                  }`}
                 />
               </div>
             </Dropdown>
@@ -510,26 +583,54 @@ useEffect(() => {
                 type="text"
                 className="!mt-2"
                 onClick={() => setMobileOpen((v) => !v)}
-                icon={mobileOpen ? <CloseOutlined style={{ fontSize: 20 }} /> : <MenuOutlined style={{ fontSize: 20 }} />}
+                icon={
+                  mobileOpen ? (
+                    <CloseOutlined style={{ fontSize: 20 }} />
+                  ) : (
+                    <MenuOutlined style={{ fontSize: 20 }} />
+                  )
+                }
               />
             )}
 
             {/* Search box */}
             <div ref={searchRef} className="relative">
-              <form onSubmit={(e) => { e.preventDefault(); doSearch(searchQuery.trim()); }}>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  doSearch(searchQuery.trim());
+                }}
+              >
                 <Input
                   placeholder="Search anything..."
                   className="mt-2 !rounded-full w-72 md:w-96"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => { if (searchResults.length) setShowResults(true); }}
-                  prefix={<Image src="/images/search-normal.png" alt="search icon" width={20} height={20} />}
-                  suffix={
-                    searchLoading
-                      ? <Spin size="small" />
-                      : <SearchOutlined onClick={() => doSearch(searchQuery.trim())} style={{ cursor: "pointer" }} />
+                  onFocus={() => {
+                    if (searchResults.length) setShowResults(true);
+                  }}
+                  prefix={
+                    <Image
+                      src="/images/search-normal.png"
+                      alt="search icon"
+                      width={20}
+                      height={20}
+                    />
                   }
-                  onPressEnter={(e) => { e.preventDefault(); doSearch(searchQuery.trim()); }}
+                  suffix={
+                    searchLoading ? (
+                      <Spin size="small" />
+                    ) : (
+                      <SearchOutlined
+                        onClick={() => doSearch(searchQuery.trim())}
+                        style={{ cursor: "pointer" }}
+                      />
+                    )
+                  }
+                  onPressEnter={(e) => {
+                    e.preventDefault();
+                    doSearch(searchQuery.trim());
+                  }}
                 />
               </form>
 
@@ -555,15 +656,23 @@ useEffect(() => {
                           {r.thumbnail ? (
                             // Use standard <img> for external thumbnail urls
                             // Next/Image not used here to simplify arbitrary remote urls
-                            <img src={r.thumbnail} alt="" className="h-10 w-12 object-cover rounded" />
+                            <img
+                              src={r.thumbnail}
+                              alt=""
+                              className="h-10 w-12 object-cover rounded"
+                            />
                           ) : (
                             <div className="h-10 w-12 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-500">
                               post
                             </div>
                           )}
                           <div className="flex-1">
-                            <div className="font-medium text-sm">{r.title || r.name || "Untitled"}</div>
-                            <div className="text-xs text-gray-500 truncate">{r.excerpt || r.summary || r.description || ""}</div>
+                            <div className="font-medium text-sm">
+                              {r.title || r.name || "Untitled"}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {r.excerpt || r.summary || r.description || ""}
+                            </div>
                           </div>
                         </button>
                       ))}
@@ -582,7 +691,12 @@ useEffect(() => {
             {pathname === "/dashboard/communities" ? (
               <Link href="/dashboard/create-community">
                 <Button className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2">
-                  <Image src="/images/add.png" width={20} height={20} alt="icon" />
+                  <Image
+                    src="/images/add.png"
+                    width={20}
+                    height={20}
+                    alt="icon"
+                  />
                   Create a Community
                 </Button>
               </Link>
@@ -591,7 +705,12 @@ useEffect(() => {
                 className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2"
                 onClick={createPost}
               >
-                <Image src="/images/add.png" width={20} height={20} alt="icon" />
+                <Image
+                  src="/images/add.png"
+                  width={20}
+                  height={20}
+                  alt="icon"
+                />
                 New Post
               </Button>
             )}
@@ -605,11 +724,37 @@ useEffect(() => {
               </Button>
             ) : (
               <div className="flex items-center gap-2">
-                <div className="bg-[#F3F3F4] rounded-full p-2">
-                  <Image src="/images/sms.png" width={20} height={20} alt="icon" />
+                <div className="bg-[#F3F3F4] rounded-full h-10 w-10 flex justify-center items-center">
+                  <Image
+                    src="/images/sms.png"
+                    width={20}
+                    height={20}
+                    alt="icon"
+                  />
                 </div>
-                <div className="bg-[#F3F3F4] rounded-full p-2">
-                  <Image src="/images/notification-bing.png" width={20} height={20} alt="icon" />
+                <div className="bg-[#F3F3F4] rounded-full h-10 w-10 flex justify-center items-center">
+                  <Dropdown
+                    dropdownRender={() => dropdownContent}
+                    trigger={["click"]}
+                    onOpenChange={(open) => {
+                      if (open) {
+                        fetchNotifications();
+                      }
+                    }}
+                  >
+                    <div className="cursor-pointer mt-3">
+                      <Badge count={count} size="small" offset={[-5, 5]}>
+                        {/* <div className="bg-[#F3F3F4] rounded-full p-2"> */}
+                        <Image
+                          src="/images/notification-bing.png"
+                          width={20}
+                          height={20}
+                          alt="notification"
+                        />
+                      </Badge>
+                    </div>
+                  </Dropdown>
+                  {/* <Image src="/images/notification-bing.png" width={20} height={20} alt="icon" /> */}
                 </div>
               </div>
             )}
@@ -638,9 +783,16 @@ useEffect(() => {
         width={400}
       >
         <div className="flex justify-center pt-6">
-          <Image src="/images/login_logo.png" alt="logo" width={150} height={150} />
+          <Image
+            src="/images/login_logo.png"
+            alt="logo"
+            width={150}
+            height={150}
+          />
         </div>
-        <h1 className="font-semibold text-center text-2xl mt-3 mb-5">Welcome Back to Withread!</h1>
+        <h1 className="font-semibold text-center text-2xl mt-3 mb-5">
+          Welcome Back to Withread!
+        </h1>
 
         <Form
           name="basic"
@@ -699,7 +851,13 @@ useEffect(() => {
               type="default"
               className="!bg-transparent !border !border-black !rounded-full !w-full !py-5 flex items-center justify-center"
             >
-              <Image src="/images/google.png" alt="logo" width={20} height={20} className="mr-2" />
+              <Image
+                src="/images/google.png"
+                alt="logo"
+                width={20}
+                height={20}
+                className="mr-2"
+              />
               Continue with Google
             </Button>
           </Form.Item>

@@ -107,7 +107,7 @@ const AllActivities = () => {
         headers: { Authorization: `Bearer ${token}` }
       })
       setUserWarning(res?.data?.activities)
-      console.log(res)
+      // console.log(res)
     } catch (error) {
       console.log(error)
     }finally{
