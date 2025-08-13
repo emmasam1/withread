@@ -69,7 +69,7 @@ export default function Page() {
       try {
         setLoading(true);
         // const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
-        const res = user
+        const res = token
           ? await axios.get(`${API_BASE_URL}/api/post/${postId}/single`)
           : await axios.get(`${API_BASE_URL}/api/post/${postId}`);
         const fetchedPost = res.data.post;
