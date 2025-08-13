@@ -550,19 +550,19 @@ const ForYou = () => {
                     width={15}
                     height={15}
                   />
-                  Share {post.shares.length || 0}
+                  Share {post?.shares?.length || 0}
                 </div>
               </div>
 
               {/* Right side stats */}
               <div className="flex gap-2 items-center whitespace-nowrap">
-                <p>{post.comments.length} Comments</p>
+                <p>{post?.comments?.length} Comments</p>
                 <Image src="/images/dot.png" alt="dot" width={3} height={3} />
                 <p>
-                  {post.likes.length + post.comments.length || 0} Impressions
+                  {post.likes.length + post?.comments?.length || 0} Impressions
                 </p>
                 <Image src="/images/dot.png" alt="dot" width={3} height={3} />
-                <p>{post.views} Views</p>
+                <p>{post?.views} Views</p>
                  {/*<p>{post.views || 0} Impressions</p> */}
               </div>
             </div>
