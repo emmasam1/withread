@@ -68,7 +68,10 @@ export default function Page() {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
+        // const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
+        const res = user
+          ? await axios.get(`${API_BASE_URL}/api/post/${postId}/single`)
+          : await axios.get(`${API_BASE_URL}/api/post/${postId}`);
         const fetchedPost = res.data.post;
         setPost(fetchedPost);
 
@@ -316,15 +319,14 @@ export default function Page() {
                   </div>
                 ) : post.author?.avatar ? (
                   <div className="rounded-full h-10 w-10 overflow-hidden">
-                     <Image
-                    src={post.author.avatar}
-                    alt="User"
-                    width={48}
-                    height={48}
-                    className="object-cover h-full w-full rounded-full"
-                  />
+                    <Image
+                      src={post.author.avatar}
+                      alt="User"
+                      width={48}
+                      height={48}
+                      className="object-cover h-full w-full rounded-full"
+                    />
                   </div>
-                 
                 ) : (
                   <div className="bg-[#F6F6F6] rounded-full w-12 h-12 flex items-center justify-center">
                     <AvatarPlaceholder text={initials} />
