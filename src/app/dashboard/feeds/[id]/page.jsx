@@ -62,20 +62,51 @@ export default function Page() {
   ];
 
   /* ----- Fetch post ----- */
+  // useEffect(() => {
+  //   if (!API_BASE_URL || !postId) return;
+
+  //   const fetchPost = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
+  //       const fetchedPost = res.data.post;
+  //       setPost(fetchedPost);
+
+  //       // ✅  Check if already saved
+  //       if (user && fetchedPost.savedBy?.includes(user._id)) {
+  //         setSavedPost(true);
+  //       }
+  //     } catch (err) {
+  //       console.error("Error fetching post:", err);
+  //       setError("Post not found.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchPost();
+  // }, [API_BASE_URL, postId, user, setLoading]);
+
   useEffect(() => {
     if (!API_BASE_URL || !postId) return;
 
     const fetchPost = async () => {
       try {
         setLoading(true);
-        // const res = await axios.get(`${API_BASE_URL}/api/post/${postId}`);
-        const res = token
-          ? await axios.get(`${API_BASE_URL}/api/post/${postId}/single`)
-          : await axios.get(`${API_BASE_URL}/api/post/${postId}`);
+
+        let url = `${API_BASE_URL}/api/post/${postId}`;
+        let config = {};
+
+        if (user) {
+          url = `${API_BASE_URL}/api/post/${postId}/single`;
+          config.headers = { Authorization: `Bearer ${token}` };
+        }
+
+        const res = await axios.get(url, config);
         const fetchedPost = res.data.post;
         setPost(fetchedPost);
 
-        // ✅  Check if already saved
+        // ✅ Check if already saved
         if (user && fetchedPost.savedBy?.includes(user._id)) {
           setSavedPost(true);
         }
@@ -88,7 +119,7 @@ export default function Page() {
     };
 
     fetchPost();
-  }, [API_BASE_URL, postId, user, setLoading]);
+  }, [API_BASE_URL, postId, user, token]);
 
   /* ----- Like / Dislike ----- */
   const handleLikeDislike = async () => {
