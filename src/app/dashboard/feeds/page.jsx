@@ -550,7 +550,7 @@ const ForYou = () => {
                     width={15}
                     height={15}
                   />
-                  Share
+                  Share {post.shares.length || 0}
                 </div>
               </div>
 
@@ -558,7 +558,12 @@ const ForYou = () => {
               <div className="flex gap-2 items-center whitespace-nowrap">
                 <p>{post.comments.length} Comments</p>
                 <Image src="/images/dot.png" alt="dot" width={3} height={3} />
-                <p>{post.views || 0} Impressions</p>
+                <p>
+                  {post.likes.length + post.comments.length || 0} Impressions
+                </p>
+                <Image src="/images/dot.png" alt="dot" width={3} height={3} />
+                <p>{post.views} Views</p>
+                 {/*<p>{post.views || 0} Impressions</p> */}
               </div>
             </div>
           </div>
