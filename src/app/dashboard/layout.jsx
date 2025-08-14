@@ -58,9 +58,10 @@ export default function DashboardLayout({ children }) {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setNotifications(res.data?.activities);
+      setNotifications(res.data?.notifications);
       setCount(res?.data?.total);
-      console.log(res.data?.activities);
+      console.log(res?.data);
+      // console.log(res?.data?.total);
     } catch (err) {
       console.error(err);
     } finally {
@@ -72,27 +73,70 @@ export default function DashboardLayout({ children }) {
     fetchNotifications();
   }, [token]);
 
- const dropdownContent = (
-  <div style={{ width: 300 }} className="bg-white p-3">
-    {loadNotification ? (
-      <Skeleton active paragraph={{ rows: 3 }} />
-    ) : notifications.length > 0 ? (
-      <div>
-        {notifications.map((item, idx) => (
-          <div key={item._id || idx} className="p-2 border-b last:border-b-0">
-            <div className="font-semibold">{item.action}</div>
-            <div className="text-xs text-gray-500">
-              On {new Date(item.createdAt).toLocaleString()}
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <p className="text-center text-gray-500 py-4">No notifications</p>
-    )}
-  </div>
-);
+  const dropdownContent = (
+    <div className="w-[320px] bg-white rounded-lg shadow-xl border border-gray-100 flex flex-col">
+      {loadNotification ? (
+        <div className="p-4">
+          <Skeleton active paragraph={{ rows: 3 }} />
+        </div>
+      ) : notifications?.length > 0 ? (
+        <>
+          <div className="max-h-96 overflow-y-auto divide-y divide-gray-100">
+            {notifications.map((item) => (
+              <div
+                key={item._id}
+                className="p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                {/* Icon / Dot for unread */}
+                <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
 
+                {/* Notification content */}
+                <div className="flex-1">
+                  <p className="text-sm text-gray-800 font-medium leading-snug">
+                    {item.message}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(item.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer link */}
+          <div className="border-t border-gray-100">
+            <button className="w-full py-2 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
+              <Link href="/dashboard/activity">See all notifications</Link>
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="p-8 text-center text-gray-500">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="mx-auto mb-2 h-8 w-8 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          No notifications
+        </div>
+      )}
+    </div>
+  );
 
   const searchRef = useRef(null);
   const debounceRef = useRef(null);
@@ -734,7 +778,7 @@ export default function DashboardLayout({ children }) {
                 </div>
                 <div className="bg-[#F3F3F4] rounded-full h-10 w-10 flex justify-center items-center">
                   <Dropdown
-                    dropdownRender={() => dropdownContent}
+                    popupRender={() => dropdownContent}
                     trigger={["click"]}
                     onOpenChange={(open) => {
                       if (open) {

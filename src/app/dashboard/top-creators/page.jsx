@@ -74,9 +74,9 @@ const Page = () => {
                 </div>
               ))
             : // Actual Data
-              topCreators.map((person, index) => (
+              topCreators.map((person) => (
                 <div
-                  key={index}
+                  key={person?._id}
                   className="bg-white flex items-center gap-4 rounded-lg"
                 >
                   <div className="h-40 w-40 rounded-lg overflow-hidden">
