@@ -46,6 +46,34 @@ export default function Page() {
   const [savedPost, setSavedPost] = useState(false);
   const [activeTab, setActiveTab] = useState("1");
   const [dropdownPlacement, setDropdownPlacement] = useState("bottomRight");
+  const [similar, setSimilar] = useState([]);
+
+  const getSimilarPost = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/post/similar-post`, {
+        params: { page: 1, limit: 5 },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("Similar Posts:", res.data);
+      setSimilar(res?.data?.posts);
+    } catch (error) {
+      console.error(
+        "Error fetching similar posts:",
+        error.response?.data || error.message
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getSimilarPost();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -232,33 +260,6 @@ export default function Page() {
       toast.error("Failed to post reply.");
     }
   };
-
-  /* ----- Save post ----- */
-  // const savePost = async () => {
-  //   if (!token) return toast.error("You need to log in to save posts.");
-  //   if (savedPost) return toast.error("You have already saved this post.");
-
-  //   try {
-  //     setLoading(true);
-  //     const { data } = await axios.put(
-  //       `${API_BASE_URL}/api/post/user/${postId}/save`,
-  //       {},
-  //       { headers: { Authorization: `Bearer ${token}` } }
-  //     );
-
-  //     if (data.success) {
-  //       toast.success("Post saved successfully.");
-  //       setSavedPost(true);
-  //     } else {
-  //       toast.error("Failed to save post.");
-  //     }
-  //   } catch (err) {
-  //     console.error("Save post error:", err);
-  //     toast.error("Something went wrong. Please try again.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const toggleSavePost = async () => {
     if (!token || !postId) {
@@ -690,7 +691,70 @@ export default function Page() {
 
         {/* Right Column Placeholder */}
         <div>
-          <SimilarContent />
+          <div className="bg-white p-3 rounded-md">
+            <div className="flex items-center justify-between">
+              <h1 className="font-semibold">Similar Content</h1>
+              <Link href="#">See all</Link>
+            </div>
+
+            {similar.map((post) => {
+              return (
+                <div className="mt-8">
+                  <div className="mb-4">
+                    <div className="h-[260px]">
+                      <Image
+                        src={
+                          post?.images?.[0] || "/images/placeholder-image.png"
+                        }
+                        alt="post image"
+                        width={400}
+                        height={260}
+                        className="w-full h-full object-cover rounded-md"
+                      />
+                    </div>
+
+                    <p className="mt-4 text-sm">{post.title}</p>
+
+                    <div className="flex items-center gap-3 mt-2">
+                      {post?.author?.avatar ? (
+                        <div className="w-10 h-10 rounded-full">
+                          <Image
+                            src={post?.author?.avatar}
+                            alt="post image"
+                            width={45}
+                            height={45}
+                            className="w-full object-cover rounded-full h-full"
+                          />
+                        </div>
+                      ) : (
+                        <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
+                          <AvatarPlaceholder text={initials} />
+                        </div>
+                      )}
+                      <h2 className="font-semibold text-sm capitalize">
+                        {post?.author?.firstName} {post?.author?.lastName}
+                      </h2>
+                      <Image
+                        src="/images/dot.png"
+                        alt="post image"
+                        width={3}
+                        height={3}
+                      />
+                      <p className="text-sm text-gray-400">
+                        {new Date(post?.createdAt)
+                          .toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
+                          .replace(/ /g, " - ")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

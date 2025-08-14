@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }) {
       );
       setNotifications(res.data?.notifications);
       setCount(res?.data?.total);
-      console.log(res?.data);
+      // console.log(res?.data);
       // console.log(res?.data?.total);
     } catch (err) {
       console.error(err);
