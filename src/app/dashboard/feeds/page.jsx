@@ -17,6 +17,7 @@ import { useApp } from "../../context/context";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
+import FollowBtn from "../components/FollowBtn"; // Adjust the import path as needed
 
 const ForYou = () => {
   const { user, API_BASE_URL, token, toggleFollowUser } = useApp();
@@ -33,6 +34,7 @@ const ForYou = () => {
   const [reportModal, setReportModal] = useState(false);
   const [toReport, setToReport] = useState(null);
   const [form] = Form.useForm();
+
 
   const showModal = (post) => {
     setSelectedPost(post);
@@ -446,6 +448,7 @@ const ForYou = () => {
                   </p>
                 </div>
               </div>
+              {/* <FollowBtn /> */}
               <div className="flex items-center gap-3">
                 {!post.isAnonymous &&
                   post?.author &&

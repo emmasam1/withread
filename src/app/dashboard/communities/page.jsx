@@ -9,6 +9,8 @@ import { motion } from "framer-motion";
 import AllCommunities from "../components/AllCommunities";
 import axios from "axios";
 import { toast } from "react-toastify";
+import CommunityMembers from "../components/CommunityMembers";
+import AboutCommunity from "../components/AboutCommunity";
 
 const Page = () => {
   const { API_BASE_URL, user, loading, setLoading, token } = useApp();
@@ -19,6 +21,7 @@ const Page = () => {
   const [isLocalLoading, setIsLocalLoading] = useState(true);
   const hasSetDefault = useRef(false);
   const [allCommunitys, setAllCommunities] = useState([]);
+  const [communityId, setCommunityId] = useState(null);
 
   const [selectedCommunity, setSelectedCommunity] = useState(() => {
     if (typeof window !== "undefined") {
@@ -27,6 +30,11 @@ const Page = () => {
     }
     return null;
   });
+
+  useEffect(() => {
+    setCommunityId(selectedCommunity?._id || null);
+    // console.log("this is the selected community id", communityId);
+  }, [selectedCommunity]);
 
   // Fetch all communities for the right sidebar
   useEffect(() => {
@@ -59,7 +67,7 @@ const Page = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
+        // console.log(res?.data?.communities);
         const list = res?.data?.communities || [];
         setCommunities(list);
 
@@ -117,24 +125,122 @@ const Page = () => {
   }`.toUpperCase();
 
   const tabs = [
-    { key: "1", label: "All Posts" },
-    { key: "2", label: "Members" },
-    { key: "3", label: "About" },
+    {
+      key: "1",
+      label: "All Posts",
+      content: (
+        <>
+          {/* Post Input */}
+          <div className="flex items-center gap-5">
+            {user?.avatar ? (
+              <Image
+                src={user.avatar}
+                alt="user image"
+                width={45}
+                height={45}
+                className="rounded-full h-12 w-12 object-cover"
+              />
+            ) : (
+              <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
+                <h1 className="font-semibold text-gray-400">{initials}</h1>
+              </div>
+            )}
+            <Link
+              href={`/dashboard/communities/${selectedCommunity?._id}`}
+              className="w-full"
+            >
+              <Input
+                placeholder="Got something on your mind? Spill it out"
+                className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3"
+                readOnly
+              />
+            </Link>
+          </div>
+          <Divider className="!bg-[#f6f6f6b3]" />
+
+          {/* Posts */}
+          {communityPosts.map((post) => (
+            <div key={post._id} className="mt-5 p-3 bg-white rounded-md">
+              {/* Post Header */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                  {post.isAnonymous ? (
+                    <div className="bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
+                      <span className="text-sm font-semibold">Anon</span>
+                    </div>
+                  ) : (
+                    <Image
+                      src={post.author?.avatar || "/images/placeholder.jpg"}
+                      alt="user image"
+                      width={45}
+                      height={45}
+                      className="rounded-full h-12 w-12 object-cover"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      {post.isAnonymous
+                        ? "Anonymous"
+                        : `${post.author?.firstName} ${post.author?.lastName}`}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(post.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <Dropdown
+                  menu={{
+                    items: [
+                      { key: "1", label: "Edit" },
+                      { key: "2", label: "Report" },
+                    ],
+                  }}
+                  trigger={["click"]}
+                  placement="bottomRight"
+                >
+                  <a onClick={(e) => e.preventDefault()}>
+                    <Space>
+                      <Image
+                        src="/images/Frame.png"
+                        alt="More"
+                        width={18}
+                        height={12}
+                      />
+                    </Space>
+                  </a>
+                </Dropdown>
+              </div>
+
+              {/* Post Content */}
+              {post.images?.length > 0 && (
+                <div className="my-3">
+                  <Image
+                    src={post.images[0]}
+                    alt="Post image"
+                    width={800}
+                    height={200}
+                    className="rounded-md w-full object-cover !h-90"
+                  />
+                </div>
+              )}
+              <h2 className="text-lg font-semibold mb-2">{post.title}</h2>
+              <p>
+                {post.content.slice(0, 100)}...
+                <Link href={`/dashboard/feeds/${post._id}`}>Read More</Link>
+              </p>
+            </div>
+          ))}
+        </>
+      ),
+    },
+    { key: "2", label: "Members", content: <CommunityMembers communityId={communityId}/> },
+    { key: "3", label: "About", content: <AboutCommunity /> },
   ];
 
   const handleCommunityClick = (community) => {
     setSelectedCommunity(community);
     sessionStorage.setItem("selectedCommunity", JSON.stringify(community));
   };
-
-  const handleLikeDislike = (id) => {
-    console.log("Like clicked for post", id);
-  };
-
-  const items = [
-    { key: "1", label: "Edit" },
-    { key: "2", label: "Report" },
-  ];
 
   if (!token) {
     return (
@@ -167,29 +273,10 @@ const Page = () => {
     <div className="p-3">
       {shouldShowAllCommunities ? (
         <AllCommunities />
-      ) : isLocalLoading ? (
-        // Skeleton Loader
-        <div className="p-6">
-          <div className="grid grid-cols-[2fr_400px] gap-9">
-            {/* Left column skeletons */}
-            <div className="space-y-4">
-              <div className="bg-white p-6 rounded-md h-[300px] animate-pulse" />
-              <div className="bg-white p-6 rounded-md h-[150px] animate-pulse" />
-              <div className="bg-white p-6 rounded-md h-[150px] animate-pulse" />
-            </div>
-
-            {/* Right sidebar skeleton */}
-            <div className="fixed right-10 w-[400px] h-screen pb-24 bg-white p-4 rounded-tr-md rounded-tl-md space-y-5">
-              <div className="h-10 bg-[#F6F6F6] rounded-full animate-pulse" />
-              <div className="h-20 bg-[#F6F6F6] rounded-md animate-pulse" />
-              <div className="h-20 bg-[#F6F6F6] rounded-md animate-pulse" />
-            </div>
-          </div>
-        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-[2fr_400px] gap-7 p-4">
           {/* Left Column */}
-          <div className="rounded-lg grid grid-cols">
+          <div className="rounded-lg">
             <div className="bg-white p-3 rounded-md w-full">
               {/* Community Banner */}
               <div className="h-70 relative">
@@ -224,27 +311,25 @@ const Page = () => {
                     Members
                   </p>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2 justify-end">
-                    <Button className="!bg-[#F3F3F4] !text-black !border-0 !rounded-full !py-4 !px-4 flex mr-3">
-                      Invite
-                    </Button>
-                    <div className="bg-[#F3F3F4] rounded-full p-2">
-                      <Image
-                        src="/images/sms.png"
-                        width={20}
-                        height={20}
-                        alt="icon"
-                      />
-                    </div>
-                    <div className="bg-[#F3F3F4] rounded-full p-2">
-                      <Image
-                        src="/images/notification-bing.png"
-                        width={20}
-                        height={20}
-                        alt="icon"
-                      />
-                    </div>
+                <div className="flex items-center gap-2 justify-end">
+                  <Button className="!bg-[#F3F3F4] !text-black !border-0 !rounded-full !py-4 !px-4 flex mr-3">
+                    Invite
+                  </Button>
+                  <div className="bg-[#F3F3F4] rounded-full p-2">
+                    <Image
+                      src="/images/sms.png"
+                      width={20}
+                      height={20}
+                      alt="icon"
+                    />
+                  </div>
+                  <div className="bg-[#F3F3F4] rounded-full p-2">
+                    <Image
+                      src="/images/notification-bing.png"
+                      width={20}
+                      height={20}
+                      alt="icon"
+                    />
                   </div>
                 </div>
               </div>
@@ -271,105 +356,10 @@ const Page = () => {
                   />
                 </div>
 
-                {/* Post Input */}
-                <div className="flex items-center gap-5">
-                  {user?.avatar ? (
-                    <Image
-                      src={user.avatar}
-                      alt="user image"
-                      width={45}
-                      height={45}
-                      className="rounded-full h-12 w-12 object-cover"
-                    />
-                  ) : (
-                    <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
-                      <h1 className="font-semibold text-gray-400">
-                        {initials}
-                      </h1>
-                    </div>
-                  )}
-                  <Link
-                    href={`/dashboard/communities/${selectedCommunity?._id}`}
-                    className="w-full"
-                  >
-                    <Input
-                      placeholder="Got something on your mind? Spill it out"
-                      className="!bg-[#F6F6F6] !border-none !outline-none !rounded-full !px-4 !py-3"
-                      readOnly
-                    />
-                  </Link>
-                </div>
-                <Divider className="!bg-[#f6f6f6b3]" />
+                {/* Active Tab Content */}
+                {tabs.find((tab) => tab.key === activeTab)?.content}
               </div>
             </div>
-
-            {/* Posts */}
-            {communityPosts.map((post) => (
-              <div key={post._id} className="mt-5 p-3 bg-white rounded-md">
-                {/* Post Header */}
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-3">
-                    {post.isAnonymous ? (
-                      <div className="bg-gray-200 rounded-full w-12 h-12 flex items-center justify-center">
-                        <span className="text-sm font-semibold">Anon</span>
-                      </div>
-                    ) : (
-                      <Image
-                        src={post.author?.avatar || "/images/placeholder.jpg"}
-                        alt="user image"
-                        width={45}
-                        height={45}
-                        className="rounded-full h-12 w-12 object-cover"
-                      />
-                    )}
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        {post.isAnonymous
-                          ? "Anonymous"
-                          : `${post.author?.firstName} ${post.author?.lastName}`}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(post.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <Dropdown
-                    menu={{ items }}
-                    trigger={["click"]}
-                    placement="bottomRight"
-                  >
-                    <a onClick={(e) => e.preventDefault()}>
-                      <Space>
-                        <Image
-                          src="/images/Frame.png"
-                          alt="More"
-                          width={18}
-                          height={12}
-                        />
-                      </Space>
-                    </a>
-                  </Dropdown>
-                </div>
-
-                {/* Post Content */}
-                {post.images?.length > 0 && (
-                  <div className="my-3">
-                    <Image
-                      src={post.images[0]}
-                      alt="Post image"
-                      width={800}
-                      height={200}
-                      className="rounded-md w-full object-cover !h-90"
-                    />
-                  </div>
-                )}
-                <h2 className="text-lg font-semibold mb-2">{post.title}</h2>
-                <p>
-                  {post.content.slice(0, 100)}...
-                  <Link href={`/dashboard/feeds/${post._id}`}>Read More</Link>
-                </p>
-              </div>
-            ))}
           </div>
 
           {/* Right Sidebar */}
@@ -436,7 +426,10 @@ const Page = () => {
             </div>
             {allCommunitys.map((community) => {
               return (
-                <div className="flex items-center justify-between mb-4">
+                <div
+                  key={community._id}
+                  className="flex items-center justify-between mb-4"
+                >
                   <div className="flex items-center gap-3">
                     <Image
                       src={community.avatar || "/images/placeholder.jpg"}

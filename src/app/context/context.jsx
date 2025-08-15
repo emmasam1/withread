@@ -66,42 +66,60 @@ export const AppProvider = ({ children }) => {
     });
   };
 
+  // Fetch logged-in user profile
+  const getLoggedInUser = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(res.data);
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  };
+
+  // Fetch user whenever token changes
+  useEffect(() => {
+    if (token) {
+      getLoggedInUser();
+    }
+  }, [token]);
+
   // Toggle follow/unfollow
-  const toggleFollowUser = async (userId) => {
+  const toggleFollowUser = async (targetUserId) => {
     if (!token || !user) {
       toast.error("You must be logged in to follow users.");
       return;
     }
 
-    const userIdStr = String(userId);
+    const userIdStr = String(targetUserId);
     const isFollowing = (user.following || []).map(String).includes(userIdStr);
-
-    // Optimistic update
-    const updatedFollowing = isFollowing
-      ? user.following.filter((id) => String(id) !== userIdStr)
-      : [...(user.following || []), userIdStr];
-
-    updateUser({ following: updatedFollowing });
 
     try {
       if (isFollowing) {
-        await axios.delete(`${API_BASE_URL}/api/user/unfollow/${userId}`, {
+        // Unfollow
+        await axios.delete(`${API_BASE_URL}/api/user/unfollow/${targetUserId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        toast.success("Unfollowed");
+        updateUser({
+          following: user.following.filter((id) => String(id) !== userIdStr),
+        });
+        toast.success("Unfollowed successfully");
       } else {
+        // Follow
         await axios.post(
-          `${API_BASE_URL}/api/user/follow/${userId}`,
+          `${API_BASE_URL}/api/user/follow/${targetUserId}`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        toast.success("Followed");
+        updateUser({
+          following: [...(user.following || []), userIdStr],
+        });
+        toast.success("Followed successfully");
       }
     } catch (error) {
       console.error("Follow toggle failed:", error.response?.data || error);
       toast.error(error.response?.data?.message || "Action failed.");
-      // Rollback on error
-      updateUser({ following: user.following });
     }
   };
 
