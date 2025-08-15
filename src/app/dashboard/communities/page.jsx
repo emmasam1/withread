@@ -18,6 +18,7 @@ const Page = () => {
   const [communities, setCommunities] = useState([]);
   const [isLocalLoading, setIsLocalLoading] = useState(true);
   const hasSetDefault = useRef(false);
+  const [allCommunitys, setAllCommunities] = useState([]);
 
   const [selectedCommunity, setSelectedCommunity] = useState(() => {
     if (typeof window !== "undefined") {
@@ -27,6 +28,24 @@ const Page = () => {
     return null;
   });
 
+  // Fetch all communities for the right sidebar
+  useEffect(() => {
+    const getAllCommunities = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${API_BASE_URL}/api/community?limit=4`);
+        setAllCommunities(res.data.communities || []);
+      } catch (error) {
+        console.error("Error fetching communities:", error);
+        toast.error("Failed to load communities");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getAllCommunities();
+  }, [API_BASE_URL]);
+
   // Fetch communities
   useEffect(() => {
     if (!token || !API_BASE_URL) return;
@@ -35,7 +54,7 @@ const Page = () => {
       try {
         setIsLocalLoading(true);
         const res = await axios.get(
-          `${API_BASE_URL}/api/community/my-community`,
+          `${API_BASE_URL}/api/community/my-community?limit=4`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -53,7 +72,10 @@ const Page = () => {
             } catch {}
           } else if (list.length > 0) {
             setSelectedCommunity(list[0]);
-            sessionStorage.setItem("selectedCommunity", JSON.stringify(list[0]));
+            sessionStorage.setItem(
+              "selectedCommunity",
+              JSON.stringify(list[0])
+            );
           }
           hasSetDefault.current = true;
         }
@@ -88,9 +110,7 @@ const Page = () => {
     getCommunityPosts();
   }, [selectedCommunity?._id, API_BASE_URL, setLoading]);
 
- const shouldShowAllCommunities =
-  !isLocalLoading && communities.length === 0;
-
+  const shouldShowAllCommunities = !isLocalLoading && communities.length === 0;
 
   const initials = `${user?.firstName?.[0] || ""}${
     user?.lastName?.[0] || ""
@@ -117,7 +137,11 @@ const Page = () => {
   ];
 
   if (!token) {
-    return <div className="p-6 text-center text-gray-500">Initializing session...</div>;
+    return (
+      <div className="p-6 text-center text-gray-500">
+        Initializing session...
+      </div>
+    );
   }
 
   if (isLocalLoading) {
@@ -140,29 +164,29 @@ const Page = () => {
   }
 
   return (
-     <div className="p-3">
-    {shouldShowAllCommunities ? (
-      <AllCommunities />
-    ) : isLocalLoading ? (
-      // Skeleton Loader
-      <div className="p-6">
-        <div className="grid grid-cols-[2fr_400px] gap-9">
-          {/* Left column skeletons */}
-          <div className="space-y-4">
-            <div className="bg-white p-6 rounded-md h-[300px] animate-pulse" />
-            <div className="bg-white p-6 rounded-md h-[150px] animate-pulse" />
-            <div className="bg-white p-6 rounded-md h-[150px] animate-pulse" />
-          </div>
+    <div className="p-3">
+      {shouldShowAllCommunities ? (
+        <AllCommunities />
+      ) : isLocalLoading ? (
+        // Skeleton Loader
+        <div className="p-6">
+          <div className="grid grid-cols-[2fr_400px] gap-9">
+            {/* Left column skeletons */}
+            <div className="space-y-4">
+              <div className="bg-white p-6 rounded-md h-[300px] animate-pulse" />
+              <div className="bg-white p-6 rounded-md h-[150px] animate-pulse" />
+              <div className="bg-white p-6 rounded-md h-[150px] animate-pulse" />
+            </div>
 
-          {/* Right sidebar skeleton */}
-          <div className="fixed right-10 w-[400px] h-screen pb-24 bg-white p-4 rounded-tr-md rounded-tl-md space-y-5">
-            <div className="h-10 bg-[#F6F6F6] rounded-full animate-pulse" />
-            <div className="h-20 bg-[#F6F6F6] rounded-md animate-pulse" />
-            <div className="h-20 bg-[#F6F6F6] rounded-md animate-pulse" />
+            {/* Right sidebar skeleton */}
+            <div className="fixed right-10 w-[400px] h-screen pb-24 bg-white p-4 rounded-tr-md rounded-tl-md space-y-5">
+              <div className="h-10 bg-[#F6F6F6] rounded-full animate-pulse" />
+              <div className="h-20 bg-[#F6F6F6] rounded-md animate-pulse" />
+              <div className="h-20 bg-[#F6F6F6] rounded-md animate-pulse" />
+            </div>
           </div>
         </div>
-      </div>
-    ) : (
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-[2fr_400px] gap-7 p-4">
           {/* Left Column */}
           <div className="rounded-lg grid grid-cols">
@@ -196,7 +220,8 @@ const Page = () => {
                 <div className="mt-15 ml-4">
                   <h2 className="font-semibold">{selectedCommunity?.name}</h2>
                   <p className="mt-2 text-sm">
-                    Public Community • {selectedCommunity?.members?.length || 0} Members
+                    Public Community • {selectedCommunity?.members?.length || 0}{" "}
+                    Members
                   </p>
                 </div>
                 <div>
@@ -258,7 +283,9 @@ const Page = () => {
                     />
                   ) : (
                     <div className="!bg-[#F6F6F6] rounded-full p-2 w-12 h-12 flex justify-center items-center">
-                      <h1 className="font-semibold text-gray-400">{initials}</h1>
+                      <h1 className="font-semibold text-gray-400">
+                        {initials}
+                      </h1>
                     </div>
                   )}
                   <Link
@@ -306,10 +333,19 @@ const Page = () => {
                       </p>
                     </div>
                   </div>
-                  <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
+                  <Dropdown
+                    menu={{ items }}
+                    trigger={["click"]}
+                    placement="bottomRight"
+                  >
                     <a onClick={(e) => e.preventDefault()}>
                       <Space>
-                        <Image src="/images/Frame.png" alt="More" width={18} height={12} />
+                        <Image
+                          src="/images/Frame.png"
+                          alt="More"
+                          width={18}
+                          height={12}
+                        />
                       </Space>
                     </a>
                   </Dropdown>
@@ -356,40 +392,67 @@ const Page = () => {
             </div>
 
             <div className="flex flex-col gap-3 mt-2">
-              {isLocalLoading ? (
-                Array.from({ length: 4 }).map((_, index) => (
-                  <Skeleton.Avatar key={index} active size="large" shape="circle" />
-                ))
-              ) : (
-                communities.map((community) => (
-                  <div
-                    key={community._id}
-                    onClick={() => handleCommunityClick(community)}
-                    className={`cursor-pointer px-3 p-2 rounded-md ${
-                      selectedCommunity?._id === community._id
-                        ? "bg-[#F5F4FF]"
-                        : "hover:bg-[#F6F6F6]"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={community.avatar || "/images/placeholder.jpg"}
-                          alt={community.name}
-                          width={45}
-                          height={45}
-                          className="rounded-full h-10 w-10 object-cover"
-                        />
-                        <h2>{community.name}</h2>
-                      </div>
-                      <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
-                        {community.members.length}
+              {isLocalLoading
+                ? Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton.Avatar
+                      key={index}
+                      active
+                      size="large"
+                      shape="circle"
+                    />
+                  ))
+                : communities.map((community) => (
+                    <div
+                      key={community._id}
+                      onClick={() => handleCommunityClick(community)}
+                      className={`cursor-pointer px-3 p-2 rounded-md ${
+                        selectedCommunity?._id === community._id
+                          ? "bg-[#F5F4FF]"
+                          : "hover:bg-[#F6F6F6]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={community.avatar || "/images/placeholder.jpg"}
+                            alt={community.name}
+                            width={45}
+                            height={45}
+                            className="rounded-full h-10 w-10 object-cover"
+                          />
+                          <h2>{community.name}</h2>
+                        </div>
+                        <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
+                          {community.members.length}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))}
             </div>
+            <Divider className="!bg-[#f6f6f6b3] my-4" />
+            <div className="flex justify-between items-center mt-3 mb-2">
+              <h1 className="font-medium text-md">All Community</h1>
+              <Link href="/dashboard/profile?tab=5">See all</Link>
+            </div>
+            {allCommunitys.map((community) => {
+              return (
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={community.avatar || "/images/placeholder.jpg"}
+                      alt={community.name}
+                      width={45}
+                      height={45}
+                      className="rounded-full h-10 w-10 object-cover"
+                    />
+                    <h2>{community.name}</h2>
+                  </div>
+                  <div className="bg-[#B475CC] rounded-full h-5 w-5 flex items-center justify-center text-white text-xs">
+                    {community.members.length}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

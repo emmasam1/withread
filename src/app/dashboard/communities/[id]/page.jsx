@@ -97,8 +97,12 @@ const Page = () => {
   };
 
   const getCategories = async () => {
+    if(!token) return;
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/interest/interests`);
+      const res = await axios.get(`${API_BASE_URL}/api/community/${communityId}/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // console.log(res.data.categories)
       setCategories(res.data.categories);
     } catch (error) {
       console.log(error);
@@ -205,7 +209,7 @@ const Page = () => {
       setCollaborators("");
       setFiles([]);
     } catch (error) {
-      toast.error("Something went wrong while submitting the post.");
+      toast.error(error?.response?.data?.message || "Failed to create post.");
     } finally {
       setLoading(false);
     }
