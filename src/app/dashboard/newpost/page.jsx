@@ -12,9 +12,12 @@ import { toast } from "react-toastify";
 import { useSearchParams } from "next/navigation";
 
 const { Dragger } = Upload;
-const Editor = dynamic(() => import("primereact/editor").then((mod) => mod.Editor), {
-  ssr: false,
-});
+const Editor = dynamic(
+  () => import("primereact/editor").then((mod) => mod.Editor),
+  {
+    ssr: false,
+  }
+);
 
 // Strip HTML tags
 const stripHtml = (html) => {
@@ -61,7 +64,9 @@ const Page = () => {
   const [editedPost, setEditedPost] = useState(null);
   const [editedPostId, setEditedPostId] = useState(null);
 
-  const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`.toUpperCase();
+  const initials = `${user?.firstName?.[0] || ""}${
+    user?.lastName?.[0] || ""
+  }`.toUpperCase();
   const tabs = [
     { key: "1", label: "Open Post" },
     { key: "2", label: "Anonymous Post" },
@@ -152,6 +157,7 @@ const Page = () => {
   if (!selectedCategoryId) return toast.warning("Select a category.");
 
   setLoading(true);
+
   const formData = new FormData();
   formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
   formData.append("title", stripHtml(title));
@@ -162,30 +168,40 @@ const Page = () => {
   formData.append("tags", tags);
   formData.append("collaborators", collaborators);
 
-  // ✅ Append images properly
-  files.forEach((file) => {
+  console.log("📸 Files state before append:", files);
+
+  // Append images
+  files.forEach((file, index) => {
     if (file.originFileObj) {
+      // console.log(`✅ Appending new image [${index}]:`, file.originFileObj.name);
       formData.append("images", file.originFileObj);
+    } else if (file.url) {
+      console.log(`ℹ️ Existing image (URL only) [${index}]:`, file.url);
+      // You can also send existing URLs if backend supports it
+    } else {
+      console.warn(`⚠️ File [${index}] has no originFileObj or URL:`, file);
     }
   });
 
+  // Debug: check FormData content
+  // for (let [key, value] of formData.entries()) {
+  //   console.log(`FormData -> ${key}:`, value);
+  // }
+
   try {
     const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data"
+      },
     });
+    console.log("✅ API Response:", res.data);
     toast.success("Post submitted successfully!");
-    // console.log(res);
-    setTitle("");
-    setContent("");
-    setLink("");
-    setEmojis("");
-    setSelectedCategoryId("");
-    setTags("");
-    setCollaborators("");
-    setFiles([]);
+    setTitle(""); setContent(""); setLink(""); setEmojis("");
+    setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
   } catch (error) {
     toast.error("Something went wrong while submitting the post.");
-    console.error(error);
+    console.error("❌ API Error:", error);
   } finally {
     setLoading(false);
   }
@@ -193,7 +209,8 @@ const Page = () => {
 
 
   // const addPost = async () => {
-  //   if (!title || !content) return toast.warning("Title and content are required.");
+  //   if (!title || !content)
+  //     return toast.warning("Title and content are required.");
   //   if (!selectedCategoryId) return toast.warning("Select a category.");
 
   //   setLoading(true);
@@ -206,120 +223,161 @@ const Page = () => {
   //   formData.append("categories", JSON.stringify([selectedCategoryId]));
   //   formData.append("tags", tags);
   //   formData.append("collaborators", collaborators);
-  //   files.forEach((file) => formData.append("images", file));
+
+  //   // ✅ Append images properly
+  //   files.forEach((file) => {
+  //     if (file.originFileObj) {
+  //       formData.append("images", file.originFileObj);
+  //     }
+  //   });
 
   //   try {
-  //     const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
-  //       headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
-  //     });
-  //     console.log(res)
+  //     const res = await axios.post(
+  //       `${API_BASE_URL}/api/post/post-feed`,
+  //       formData,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "multipart/form-data",
+  //         },
+  //       }
+  //     );
   //     toast.success("Post submitted successfully!");
-  //     setTitle(""); setContent(""); setLink(""); setEmojis("");
-  //     setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
+  //     // console.log(res);
+  //     setTitle("");
+  //     setContent("");
+  //     setLink("");
+  //     setEmojis("");
+  //     setSelectedCategoryId("");
+  //     setTags("");
+  //     setCollaborators("");
+  //     setFiles([]);
   //   } catch (error) {
   //     toast.error("Something went wrong while submitting the post.");
+  //     console.error(error);
   //   } finally {
   //     setLoading(false);
   //   }
   // };
 
   const saveEditedPostToDraft = async () => {
-  if (!title || !content) return toast.warning("Title and content are required.");
-  if (!selectedCategoryId) return toast.warning("Select a category.");
+    if (!title || !content)
+      return toast.warning("Title and content are required.");
+    if (!selectedCategoryId) return toast.warning("Select a category.");
 
-  setDraftLoading(true);
-  const formData = new FormData();
+    setDraftLoading(true);
+    const formData = new FormData();
 
-  formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
-  formData.append("status", "draft");
-  formData.append("title", stripHtml(title));
-  formData.append("content", stripHtml(content));
-  formData.append("link", link);
-  formData.append("emojis", emojis);
-  formData.append("categories", JSON.stringify([selectedCategoryId]));
-  formData.append("tags", tags);
-  formData.append("collaborators", collaborators);
+    formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+    formData.append("status", "draft");
+    formData.append("title", stripHtml(title));
+    formData.append("content", stripHtml(content));
+    formData.append("link", link);
+    formData.append("emojis", emojis);
+    formData.append("categories", JSON.stringify([selectedCategoryId]));
+    formData.append("tags", tags);
+    formData.append("collaborators", collaborators);
 
-  // Separate existing and new images
-  const existingImageUrls = [];
-  files.forEach((file) => {
-    if (file.originFileObj) {
-      formData.append("images", file.originFileObj);
-    } else if (file.url) {
-      existingImageUrls.push(file.url);
-    }
-  });
-
-  formData.append("existingImages", JSON.stringify(existingImageUrls));
-
-  try {
-    const res = await axios.patch(`${API_BASE_URL}/api/post/drafts/${editedPostId}`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
+    // Separate existing and new images
+    const existingImageUrls = [];
+    files.forEach((file) => {
+      if (file.originFileObj) {
+        formData.append("images", file.originFileObj);
+      } else if (file.url) {
+        existingImageUrls.push(file.url);
+      }
     });
-    toast.success(res.data.message || "Draft updated successfully!");
-     setTitle(""); setContent(""); setLink(""); setEmojis("");
-      setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
-  } catch (error) {
-    toast.error("Failed to update draft.");
-    console.error(error);
-  } finally {
-    setDraftLoading(false);
-  }
-};
 
+    formData.append("existingImages", JSON.stringify(existingImageUrls));
+
+    try {
+      const res = await axios.patch(
+        `${API_BASE_URL}/api/post/drafts/${editedPostId}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      toast.success(res.data.message || "Draft updated successfully!");
+      setTitle("");
+      setContent("");
+      setLink("");
+      setEmojis("");
+      setSelectedCategoryId("");
+      setTags("");
+      setCollaborators("");
+      setFiles([]);
+    } catch (error) {
+      toast.error("Failed to update draft.");
+      console.error(error);
+    } finally {
+      setDraftLoading(false);
+    }
+  };
 
   const saveToDraft = async () => {
-  if (!title || !content) return toast.warning("Title and content are required.");
-  if (!selectedCategoryId) return toast.warning("Select a category.");
+    if (!title || !content)
+      return toast.warning("Title and content are required.");
+    if (!selectedCategoryId) return toast.warning("Select a category.");
 
-  setDraftLoading(true);
-  const formData = new FormData();
+    setDraftLoading(true);
+    const formData = new FormData();
 
-  // Add text fields
-  formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
-  formData.append("status", "draft");
-  formData.append("title", stripHtml(title));
-  formData.append("content", stripHtml(content));
-  formData.append("link", link);
-  formData.append("emojis", emojis);
-  formData.append("categories", JSON.stringify([selectedCategoryId]));
-  formData.append("tags", tags);
-  formData.append("collaborators", collaborators);
+    // Add text fields
+    formData.append("isAnonymous", activeTab === "2" ? "true" : "false");
+    formData.append("status", "draft");
+    formData.append("title", stripHtml(title));
+    formData.append("content", stripHtml(content));
+    formData.append("link", link);
+    formData.append("emojis", emojis);
+    formData.append("categories", JSON.stringify([selectedCategoryId]));
+    formData.append("tags", tags);
+    formData.append("collaborators", collaborators);
 
-  // Separate existing and new images
-  const existingImageUrls = [];
-  files.forEach((file) => {
-    if (file.originFileObj) {
-      // New file selected by user
-      formData.append("images", file.originFileObj);
-    } else if (file.url) {
-      // Existing image from server
-      existingImageUrls.push(file.url);
-    }
-  });
-
-  // Append existing image URLs as JSON
-  formData.append("existingImages", JSON.stringify(existingImageUrls));
-
-  try {
-    const res = await axios.post(`${API_BASE_URL}/api/post/post-feed`, formData, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
+    // Separate existing and new images
+    const existingImageUrls = [];
+    files.forEach((file) => {
+      if (file.originFileObj) {
+        // New file selected by user
+        formData.append("images", file.originFileObj);
+      } else if (file.url) {
+        // Existing image from server
+        existingImageUrls.push(file.url);
+      }
     });
-    toast.success(res.data.message || "Post saved to draft successfully!");
-    setTitle(""); setContent(""); setLink(""); setEmojis("");
-    setSelectedCategoryId(""); setTags(""); setCollaborators(""); setFiles([]);
-  } catch (error) {
-    toast.error("Something went wrong while saving the draft.");
-  } finally {
-    setDraftLoading(false);
-  }
-};
+
+    // Append existing image URLs as JSON
+    formData.append("existingImages", JSON.stringify(existingImageUrls));
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/api/post/post-feed`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      toast.success(res.data.message || "Post saved to draft successfully!");
+      setTitle("");
+      setContent("");
+      setLink("");
+      setEmojis("");
+      setSelectedCategoryId("");
+      setTags("");
+      setCollaborators("");
+      setFiles([]);
+    } catch (error) {
+      toast.error("Something went wrong while saving the draft.");
+    } finally {
+      setDraftLoading(false);
+    }
+  };
 
   return (
     <div className="p-4">
@@ -469,26 +527,29 @@ const Page = () => {
 
         {/* Buttons */}
         <div className="flex justify-end my-4 gap-2">
-          {editedPostId ? <Button
-            onClick={saveEditedPostToDraft}
-            loading={draftLoading}
-            className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8"
-          >
-            Save to Drafts
-          </Button> : <Button
-            onClick={saveToDraft}
-            loading={draftLoading}
-            className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8"
-          >
-            Save to Drafts
-          </Button>}
-          
+          {editedPostId ? (
+            <Button
+              onClick={saveEditedPostToDraft}
+              loading={draftLoading}
+              className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8"
+            >
+              Save to Drafts
+            </Button>
+          ) : (
+            <Button
+              onClick={saveToDraft}
+              loading={draftLoading}
+              className="!bg-[#F1F1F2] !text-black !border-0 !rounded-full !py-5 !px-8"
+            >
+              Save to Drafts
+            </Button>
+          )}
+
           <Button
             className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8"
             onClick={addPost}
             loading={loading}
           >
-            
             Post now
           </Button>
         </div>

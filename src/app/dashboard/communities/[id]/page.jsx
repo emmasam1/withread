@@ -155,7 +155,7 @@ const Page = () => {
     setSelectedCategoryId(value);
   };
 
-  const addPost = async () => {
+  const createdCommunityPost = async () => {
     if (!title || !content)
       return toast.warning("Title and content are required.");
     if (!selectedCategoryId) return toast.warning("Select a category.");
@@ -170,11 +170,22 @@ const Page = () => {
     formData.append("categories", JSON.stringify([selectedCategoryId]));
     formData.append("tags", tags);
     formData.append("collaborators", collaborators);
-    files.forEach((file) => formData.append("images", file));
+    
+      files.forEach((file, index) => {
+    if (file.originFileObj) {
+      // console.log(`✅ Appending new image [${index}]:`, file.originFileObj.name);
+      formData.append("images", file.originFileObj);
+    } else if (file.url) {
+      console.log(`ℹ️ Existing image (URL only) [${index}]:`, file.url);
+      // You can also send existing URLs if backend supports it
+    } else {
+      console.warn(`⚠️ File [${index}] has no originFileObj or URL:`, file);
+    }
+  });
 
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/api/post/post-feed`,
+        `${API_BASE_URL}/api/post/community/${communityId}`,
         formData,
         {
           headers: {
@@ -183,7 +194,8 @@ const Page = () => {
           },
         }
       );
-      toast.success("Post submitted successfully!");
+      console.log(res.data)
+      toast.success(res?.data?.message || "Post created successfully!");
       setTitle("");
       setContent("");
       setLink("");
@@ -487,7 +499,7 @@ const Page = () => {
 
           <Button
             className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-5 !px-8"
-            onClick={addPost}
+            onClick={createdCommunityPost}
             loading={loading}
           >
             Post now
