@@ -51,6 +51,7 @@ export default function DashboardLayout({ children }) {
 
   const fetchNotifications = async () => {
     setLoadNotification(true);
+    if(!token) return
     try {
       const res = await axios.get(
         `${API_BASE_URL}/api/activity/activities?_limit=5`,

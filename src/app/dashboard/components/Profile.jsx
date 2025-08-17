@@ -158,146 +158,165 @@ const Profile = () => {
   return (
     <div className="p-3 rounded-lg space-y-8">
       <ToastContainer />
-      {/* Profile Picture */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-3 items-center">
-          <div className="rounded-full h-24 w-24 overflow-hidden">
-            {avatarUploading ? (
-              <Skeleton.Avatar active size={96} shape="circle" />
-            ) : (
-              <Image
-                src={userDetails?.user?.avatar || "/images/avatar.jpg"}
-                alt="Profile"
-                height={100}
-                width={100}
-                className="rounded-full h-full w-full object-cover"
-              />
-            )}
-          </div>
-          <div>
-            <h1 className="font-semibold">Profile Picture</h1>
-            <span className="text-[#333333B2] text-xs">
-              PNG, JPEG under 10MB
-            </span>
-          </div>
-        </div>
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          className="!border-none !rounded-full !px-6 !py-4 !bg-black !text-white"
-        >
-          Change Picture
-        </Button>
-      </div>
-
-      {/* Change Picture Modal */}
-      <Modal
-        title="Change Picture"
-        open={isModalOpen}
-        footer={null}
-        onCancel={() => setIsModalOpen(false)}
-      >
-        <Upload
-          listType="picture-card"
-          fileList={fileList}
-          beforeUpload={() => false}
-          onPreview={handlePreview}
-          onChange={handleAvatarChange}
-          accept=".png,.jpg,.jpeg"
-          maxCount={1}
-        >
-          {fileList.length >= 1 ? null : (
-            <div>
-              <PlusOutlined />
-              <div style={{ marginTop: 8 }}>Select</div>
+      {loading ? (
+        // 🔹 Skeleton Loader
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton.Avatar active size={96} shape="circle" />
+            <div className="flex flex-col gap-2">
+              <Skeleton.Input active size="small" style={{ width: 120 }} />
+              <Skeleton.Input active size="small" style={{ width: 180 }} />
             </div>
-          )}
-        </Upload>
-        {fileList.length > 0 && (
-          <div className="flex justify-center mt-3">
+          </div>
+          <Skeleton.Input active size="default" block />
+          <Skeleton.Input active size="default" block />
+          <Skeleton paragraph={{ rows: 4 }} active />
+          <Skeleton.Input active size="large" block />
+        </div>
+      ) : (
+        <>
+          {/* Profile Picture */}
+          <div className="flex justify-between items-center">
+            <div className="flex gap-3 items-center">
+              <div className="rounded-full h-24 w-24 overflow-hidden">
+                {avatarUploading ? (
+                  <Skeleton.Avatar active size={96} shape="circle" />
+                ) : (
+                  <Image
+                    src={userDetails?.user?.avatar || "/images/avatar.jpg"}
+                    alt="Profile"
+                    height={100}
+                    width={100}
+                    className="rounded-full h-full w-full object-cover"
+                  />
+                )}
+              </div>
+              <div>
+                <h1 className="font-semibold">Profile Picture</h1>
+                <span className="text-[#333333B2] text-xs">
+                  PNG, JPEG under 10MB
+                </span>
+              </div>
+            </div>
             <Button
-              type="primary"
-              onClick={uploadAvatar}
-              loading={avatarUploading}
+              onClick={() => setIsModalOpen(true)}
               className="!border-none !rounded-full !px-6 !py-4 !bg-black !text-white"
             >
-              Upload Avatar
+              Change Picture
             </Button>
           </div>
-        )}
-      </Modal>
 
-      {/* Preview Modal */}
-      <Modal
-        open={previewOpen}
-        title={previewTitle}
-        footer={null}
-        onCancel={() => setPreviewOpen(false)}
-      >
-        <img alt="preview" style={{ width: "100%" }} src={previewImage} />
-      </Modal>
+          {/* Change Picture Modal */}
+          <Modal
+            title="Change Picture"
+            open={isModalOpen}
+            footer={null}
+            onCancel={() => setIsModalOpen(false)}
+          >
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              beforeUpload={() => false}
+              onPreview={handlePreview}
+              onChange={handleAvatarChange}
+              accept=".png,.jpg,.jpeg"
+              maxCount={1}
+            >
+              {fileList.length >= 1 ? null : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Select</div>
+                </div>
+              )}
+            </Upload>
+            {fileList.length > 0 && (
+              <div className="flex justify-center mt-3">
+                <Button
+                  type="primary"
+                  onClick={uploadAvatar}
+                  loading={avatarUploading}
+                  className="!border-none !rounded-full !px-6 !py-4 !bg-black !text-white"
+                >
+                  Upload Avatar
+                </Button>
+              </div>
+            )}
+          </Modal>
 
-      {/* Name Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-1">
-          <p className="font-medium text-gray-700">First Name</p>
-          <Input
-            value={profileForm.firstName}
-            onChange={(e) =>
-              setProfileForm({ ...profileForm, firstName: e.target.value })
-            }
-            className="!rounded-lg !bg-[#F6F6F6] !border-[#0A0E1614]"
-          />
-        </div>
-        <div className="space-y-1">
-          <p className="font-medium text-gray-700">Last Name</p>
-          <Input
-            value={profileForm.lastName}
-            onChange={(e) =>
-              setProfileForm({ ...profileForm, lastName: e.target.value })
-            }
-            className="!rounded-lg !bg-[#F6F6F6] !border-[#0A0E1614]"
-          />
-        </div>
-      </div>
+          {/* Preview Modal */}
+          <Modal
+            open={previewOpen}
+            title={previewTitle}
+            footer={null}
+            onCancel={() => setPreviewOpen(false)}
+          >
+            <img alt="preview" style={{ width: "100%" }} src={previewImage} />
+          </Modal>
 
-      {/* About Me */}
-      <div>
-        <p className="font-medium text-gray-700">About Me</p>
-        <TextArea
-          rows={4}
-          value={profileForm.bio}
-          onChange={(e) =>
-            setProfileForm({ ...profileForm, bio: e.target.value })
-          }
-          className="!bg-[#F6F6F6] resize-none !border-[#0A0E1614]"
-        />
-      </div>
+          {/* Name Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <p className="font-medium text-gray-700">First Name</p>
+              <Input
+                value={profileForm.firstName}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, firstName: e.target.value })
+                }
+                className="!rounded-lg !bg-[#F6F6F6] !border-[#0A0E1614]"
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-gray-700">Last Name</p>
+              <Input
+                value={profileForm.lastName}
+                onChange={(e) =>
+                  setProfileForm({ ...profileForm, lastName: e.target.value })
+                }
+                className="!rounded-lg !bg-[#F6F6F6] !border-[#0A0E1614]"
+              />
+            </div>
+          </div>
 
-      {/* Profile Banner Upload */}
-      <div>
-        <h1 className="font-semibold mb-2 text-sm text-gray-600">
-          Upload a Profile Banner Picture
-        </h1>
-        <Dragger {...draggerProps} className="!bg-[#FAFAFA] !border-[#EAEAEA]">
-          <p className="ant-upload-drag-icon flex items-center justify-center">
-            <Image src="/images/upload.png" alt="Upload" width={40} height={40} />
-          </p>
-          <p className="ant-upload-text">
-            Drag and drop media or click to select
-          </p>
-        </Dragger>
-      </div>
+          {/* About Me */}
+          <div>
+            <p className="font-medium text-gray-700">About Me</p>
+            <TextArea
+              rows={4}
+              value={profileForm.bio}
+              onChange={(e) =>
+                setProfileForm({ ...profileForm, bio: e.target.value })
+              }
+              className="!bg-[#F6F6F6] resize-none !border-[#0A0E1614]"
+            />
+          </div>
 
-      {/* Update Profile Button */}
-      <div>
-        <Button
-          onClick={handleProfileUpdate}
-          loading={updateProfile}
-          className="!border-none !rounded-full !px-6 !py-4 !bg-black !text-white"
-        >
-          Update Profile
-        </Button>
-      </div>
+          {/* Profile Banner Upload */}
+          <div>
+            <h1 className="font-semibold mb-2 text-sm text-gray-600">
+              Upload a Profile Banner Picture
+            </h1>
+            <Dragger {...draggerProps} className="!bg-[#FAFAFA] !border-[#EAEAEA]">
+              <p className="ant-upload-drag-icon flex items-center justify-center">
+                <Image src="/images/upload.png" alt="Upload" width={40} height={40} />
+              </p>
+              <p className="ant-upload-text">
+                Drag and drop media or click to select
+              </p>
+            </Dragger>
+          </div>
+
+          {/* Update Profile Button */}
+          <div>
+            <Button
+              onClick={handleProfileUpdate}
+              loading={updateProfile}
+              className="!border-none !rounded-full !px-6 !py-4 !bg-black !text-white"
+            >
+              Update Profile
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
