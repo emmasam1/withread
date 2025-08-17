@@ -15,6 +15,9 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [draftLoading, setDraftLoading] = useState(false);
   const [theme, setTheme] = useState("System");
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
   // Load theme on mount
   useEffect(() => {
@@ -45,6 +48,51 @@ export const AppProvider = ({ children }) => {
       setLoading(false);
     }
   }, []);
+
+const performSearch = async (q, type = "all", page = 1, limit = 10) => {
+  if (!q || q.trim() === "") {
+    toast.error("Search query is required");
+    return;
+  }
+
+  setSearchLoading(true);
+  setSearchError(null);
+
+  try {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/search?q=${encodeURIComponent(q)}&type=${type}&page=${page}&limit=${limit}`,
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      }
+    );
+
+    const rawResults = res.data.results;
+
+    // Normalize response to always have { users, posts, communities }
+    let normalized = { users: [], posts: [], communities: [] };
+
+    if (type === "all") {
+      normalized.users = rawResults?.users || [];
+      normalized.posts = rawResults?.posts || [];
+      normalized.communities = rawResults?.communities || [];
+    } else {
+      normalized[type] = Array.isArray(rawResults) ? rawResults : [];
+    }
+
+    const finalData = { ...res.data, results: normalized };
+    setSearchResults(finalData);
+
+    return finalData;
+  } catch (error) {
+    console.error("Search failed:", error.response?.data || error);
+    setSearchError(error.response?.data?.message || "Search failed");
+    toast.error(error.response?.data?.message || "Search failed");
+  } finally {
+    setSearchLoading(false);
+  }
+};
+
+
 
   // Set user and persist to sessionStorage
   const setUser = (userData) => {
@@ -150,6 +198,10 @@ export const AppProvider = ({ children }) => {
         toggleFollowUser,
         theme,
         updateTheme,
+        searchResults,
+        searchLoading,
+        searchError,
+        performSearch,
       }}
     >
       {children}
