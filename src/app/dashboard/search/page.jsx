@@ -52,13 +52,15 @@ export default function SearchPage() {
             <span className="text-blue-500 break-words">{query}</span>
           </h1>
           {/* Mobile Filter Button */}
-          <Button
-            className="lg:hidden flex items-center"
+         <div className="lg:hidden">
+           <Button
+            className="flex items-center"
             icon={<FilterOutlined />}
             onClick={() => setDrawerOpen(true)}
           >
             Filters
           </Button>
+         </div>
         </div>
 
         <Tabs
@@ -140,7 +142,7 @@ export default function SearchPage() {
       </div>
 
       {/* Right Sidebar (Desktop) */}
-      <div className="w-72 border-l bg-gray-50 px-4 py-6 hidden lg:block fixed right-0 top-0 bottom-0 overflow-y-auto">
+      <div className="w-72 shadow-md bg-gray-50 px-4 py-6 mt-16 hidden lg:block fixed right-0 top-0 bottom-0 overflow-y-auto">
         <SidebarFilters
           filters={filters}
           activeTab={activeTab}
@@ -174,7 +176,7 @@ function SidebarFilters({ filters, activeTab, setActiveTab }) {
         <button
           key={f.key}
           onClick={() => setActiveTab(f.key)}
-          className={`block w-full text-left px-3 py-2 rounded transition ${
+          className={`block w-full cursor-pointer text-left px-3 py-2 rounded transition ${
             activeTab === f.key
               ? "!bg-black !text-white font-semibold"
               : "hover:bg-gray-200 text-gray-700"
