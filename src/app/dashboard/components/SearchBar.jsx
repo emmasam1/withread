@@ -32,7 +32,7 @@ function SearchBar() {
 
   const [searchTerm, setSearchTerm] = useState(queryParam);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [loading, setLoading] = useState(false); // ✅ loading state
+  const [loading, setLoading] = useState(false);
 
   // ✅ Keep state in sync with query string
   useEffect(() => {
@@ -41,8 +41,13 @@ function SearchBar() {
 
   const handleSearch = () => {
     if (!searchTerm.trim()) return;
-    setLoading(true); // show spinner
+    setLoading(true);
+
     router.push(`/dashboard/search?q=${encodeURIComponent(searchTerm.trim())}`);
+
+    // ✅ Clear input after search
+    setSearchTerm("");
+
     // Simulate navigation delay
     setTimeout(() => {
       setLoading(false);
@@ -86,10 +91,10 @@ function SearchBar() {
       </div>
 
       {/* ✅ Mobile: only search icon */}
-      <div className="md:hidden">
+      <div className="md:hidden !pt-2">
         <SearchOutlined
           onClick={() => setDrawerOpen(true)}
-          className="text-xl cursor-pointer !mt-4"
+          className="text-xl cursor-pointer"
         />
       </div>
 
