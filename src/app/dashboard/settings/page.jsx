@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Account from "../components/Account";
@@ -8,7 +9,22 @@ import Privacy from "../components/Privacy";
 import Notification from "../components/Notification";
 import HelpandSupport from "../components/HelpandSupport";
 
-const Page = () => {
+/* ✅ Page wrapper with Suspense */
+export default function SettingsPageWrapper() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-3">
+          <div className="bg-white rounded-lg p-3">Loading settings...</div>
+        </div>
+      }
+    >
+      <Page />
+    </Suspense>
+  );
+}
+
+function Page() {
   const [activeTab, setActiveTab] = useState("1");
   const searchParams = useSearchParams();
 
@@ -20,7 +36,7 @@ const Page = () => {
     { key: "5", label: "Help & Support", content: <HelpandSupport /> },
   ];
 
-   useEffect(() => {
+  useEffect(() => {
     const tabFromURL = searchParams.get("tab");
     if (tabFromURL && tabs.find((t) => t.key === tabFromURL)) {
       setActiveTab(tabFromURL);
@@ -63,6 +79,4 @@ const Page = () => {
       </div>
     </div>
   );
-};
-
-export default Page;
+}
