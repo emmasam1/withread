@@ -16,7 +16,7 @@ const Page = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/post/followed`, {
+        const res = await axios.get(`${API_BASE_URL}/api/post/featured`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setPosts(res.data.posts || []);

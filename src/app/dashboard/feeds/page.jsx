@@ -97,7 +97,7 @@ const ForYou = () => {
         signal,
       });
 
-      console.log(res.data);
+      // console.log(res.data);
       const fetchedPosts = res.data.posts || [];
       setPosts((prev) =>
         pageNumber === 1 || reset ? fetchedPosts : [...prev, ...fetchedPosts]
@@ -309,7 +309,7 @@ const ForYou = () => {
   };
 
   return (
-    <div className="space-y-8 w-full">
+    <div className="p-4">
       {/* Modal */}
 
       <Modal
@@ -477,7 +477,7 @@ const ForYou = () => {
             <div
               key={post._id}
               ref={isLastPost ? lastPostRef : null}
-              className="rounded-lg p-4 shadow-md w-full max-w-3xl mx-auto bg-white"
+              className="rounded-lg p-4 shadow-md mb-4 bg-white"
             >
               {/* Header */}
               <div className="flex sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
@@ -652,7 +652,7 @@ const ForYou = () => {
 
       {/* Skeleton Loader */}
       {loading && (
-        <div className="space-y-4 max-w-3xl mx-auto">
+        <div className="">
           {Array(2)
             .fill(null)
             .map((_, i) => (

@@ -6,24 +6,22 @@ import { Button, Input, Divider } from "antd";
 import { motion } from "framer-motion";
 import { useApp } from "../context/context";
 import Link from "next/link";
+import axios from "axios";
+
 
 // import ForYou from "@/components/home/ForYou";
 
 import TrendingContents from "./components/TrendingContents";
 import TopCreators from "./components/home/TopCreators";
 import ForYou from "./feeds/page";
-// import Featured from "./featured/page";
+import Featured from "./featured/page";
 import Following from "./following/page";
-
-// const ForYou = () => <div className="p-4 bg-white shadow rounded">This is For You</div>;
-const Featured = () => (
-  <div className="p-4 bg-white shadow rounded">This is Featured</div>
-);
 
 
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
-  const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading } = useApp();
+  const { isLoggedIn, API_BASE_URL, user, setUser, logout, loading, setLoading, token } = useApp();
+   const [userDetails, setUserDetails] = useState({});
 
   const tabs = [
     { key: "1", label: "For you", content: <ForYou /> },
@@ -31,21 +29,30 @@ const Page = () => {
     { key: "3", label: "Following", content: <Following /> },
   ];
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (user) {
-        try {
-          setUser(user);
-        } catch (error) {
-          console.error("Error parsing stored user:", error);
-        }
-      }
-    }
-  }, []);
 
-  const initials = `${user?.firstName?.[0] || ""}${
-    user?.lastName?.[0] || ""
-  }`.toUpperCase();
+  
+  const getUser = async () => {
+      try {
+        if (!token) return;
+        setLoading(true);
+        const res = await axios.get(`${API_BASE_URL}/api/user/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUserDetails(res.data.user);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    useEffect(() => {
+      getUser();
+    }, [token]);
+    
+    const initials = `${userDetails?.firstName?.[0] || ""}${
+      userDetails?.lastName?.[0] || ""
+    }`.toUpperCase();
 
   return (
     <div className="p-3">
@@ -79,10 +86,10 @@ const Page = () => {
                 {/* Post Input */}
                 <div className="bg-white rounded-lg p-3 mb-6">
                   <div className="flex items-center gap-5">
-                    {user?.avatar ? (
+                    {userDetails?.avatar ? (
                       <div className="rounded-full w-12 h-12">
                         <Image
-                        src={user?.avatar}
+                        src={userDetails?.avatar}
                         alt="user image"
                         width={45}
                         height={45}
