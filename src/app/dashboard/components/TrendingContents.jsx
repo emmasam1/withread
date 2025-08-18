@@ -16,32 +16,34 @@ const TrendingContents = () => {
   const { API_BASE_URL, loading, setLoading } = useApp();
   const [trending, setTrending] = useState([]);
 
- useEffect(() => {
-  const getTrending = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get(
-        `${API_BASE_URL}/api/post/trending?page=1&limit=4`
-      );
+  useEffect(() => {
+    const getTrending = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `${API_BASE_URL}/api/post/trending?page=1&limit=4`
+        );
 
-      setTrending(res.data.posts);
-      // console.log(res.data);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  getTrending();
-}, [API_BASE_URL]);
-
+        setTrending(res.data.posts);
+        // console.log(res.data);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    getTrending();
+  }, [API_BASE_URL]);
 
   return (
     <div className="bg-white rounded-lg p-5 shadow-sm">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-semibold">Trending Contents</h2>
-        <Link href="/dashboard/trending-content" className="text-sm text-blue-500 hover:underline">
+        <Link
+          href="/dashboard/trending-content"
+          className="text-sm text-blue-500 hover:underline"
+        >
           See All
         </Link>
       </div>
@@ -139,17 +141,17 @@ const TrendingContents = () => {
                       <span>{trend.readTime || "3 min read"}</span>
                     </div>
                   </div>
-                  <Image
-                    src={
-                      trend.images && trend.images.length > 0
-                        ? trend.images[0]
-                        : "/images/placeholder-image.png"
-                    }
-                    alt="Post"
-                    width={100}
-                    height={80}
-                    className="rounded-lg object-cover h-full"
-                  />
+                  {Array.isArray(trend?.images) &&
+                    trend.images.length > 0 &&
+                    trend.images[0] && (
+                      <Image
+                        src={trend.images[0]}
+                        alt="Post image"
+                        width={100}
+                        height={80}
+                        className="rounded-lg object-cover h-full"
+                      />
+                    )}
                 </div>
               </div>
             );

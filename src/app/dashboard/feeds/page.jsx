@@ -212,80 +212,72 @@ const ForYou = () => {
   };
 
   const normalizeFollowing = (userData) => {
-  return (userData.following || []).map(f =>
-    typeof f === "string" ? f : f._id.toString()
-  );
-};
+    return (userData.following || []).map((f) =>
+      typeof f === "string" ? f : f._id.toString()
+    );
+  };
 
+  const getUser = async () => {
+    try {
+      if (!token) return;
+      const res = await axios.get(`${API_BASE_URL}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userData = res.data.user;
 
- const getUser = async () => {
-  try {
-    if (!token) return;
-    const res = await axios.get(`${API_BASE_URL}/api/user/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const userData = res.data.user;
+      setCurrentUser({
+        ...userData,
+        following: normalizeFollowing(userData),
+      });
 
-    setCurrentUser({
-      ...userData,
-      following: normalizeFollowing(userData),
-    });
-
-    console.log("Following IDs:", normalizeFollowing(userData));
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+      console.log("Following IDs:", normalizeFollowing(userData));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     getUser();
   }, [token]);
 
-const handleFollowToggle = async (authorId) => {
-  if (!currentUser) return;
+  const handleFollowToggle = async (authorId) => {
+    if (!currentUser) return;
 
-  setLoadingUserId(authorId);
-  const authorIdStr = authorId.toString();
-  const isFollowing = currentUser.following.includes(authorIdStr);
+    setLoadingUserId(authorId);
+    const authorIdStr = authorId.toString();
+    const isFollowing = currentUser.following.includes(authorIdStr);
 
-  try {
-    if (isFollowing) {
-      await axios.delete(`${API_BASE_URL}/api/user/unfollow/${authorIdStr}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("Unfollowed successfully");
-    } else {
-      await axios.post(`${API_BASE_URL}/api/user/follow/${authorIdStr}`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      toast.success("Followed successfully");
+    try {
+      if (isFollowing) {
+        await axios.delete(`${API_BASE_URL}/api/user/unfollow/${authorIdStr}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        toast.success("Unfollowed successfully");
+      } else {
+        await axios.post(
+          `${API_BASE_URL}/api/user/follow/${authorIdStr}`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        toast.success("Followed successfully");
+      }
+
+      // fetch latest user data to update `following`
+      await getUser();
+    } catch (err) {
+      console.error("Follow toggle error:", err);
+      if (err.response?.data?.message === "Already following") {
+        toast.info("You are already following this user");
+        await getUser(); // sync state
+      } else {
+        toast.error("Failed to update follow status.");
+      }
+    } finally {
+      setLoadingUserId(null);
     }
-
-    // fetch latest user data to update `following`
-    await getUser();
-
-  } catch (err) {
-    console.error("Follow toggle error:", err);
-    if (err.response?.data?.message === "Already following") {
-      toast.info("You are already following this user");
-      await getUser(); // sync state
-    } else {
-      toast.error("Failed to update follow status.");
-    }
-  } finally {
-    setLoadingUserId(null);
-  }
-};
-
-
-
-
-
-
-
-
-
+  };
 
   const AvatarPlaceholder = ({ text }) => (
     <h1 className="font-semibold text-gray-400">{text}</h1>
@@ -441,22 +433,21 @@ const handleFollowToggle = async (authorId) => {
         </Form>
       </Modal>
 
-      {currentUser &&
-       posts.map((post, index) => {
-    const authorId = post.author?._id?.toString();
-    const isFollowing = currentUser?.following?.some(
-      (id) => id.toString() === authorId
-    );
+      {posts &&
+        posts.map((post, index) => {
+          const authorId = post.author?._id?.toString();
+          const isFollowing = currentUser?.following?.some(
+            (id) => id.toString() === authorId
+          );
 
-    console.log("Post author:", authorId, "Following?", isFollowing);
+          // console.log("Post author:", authorId, "Following?", isFollowing);
 
-console.log({
-  postId: post._id,
-  authorId: post.author._id,
-  followingList: currentUser.following,
-  isFollowing,
-});
-
+          // console.log({
+          //   postId: post._id,
+          //   authorId: post.author._id,
+          //   // followingList: currentUser.following,
+          //   isFollowing,
+          // });
 
           const isLastPost = posts.length === index + 1;
           const initials = `${post?.author?.firstName?.[0] || ""}${
@@ -524,21 +515,19 @@ console.log({
 
                 {/* Follow + Dropdown */}
                 <div className="flex items-center gap-3">
-                {user && post?.author && post.author._id !== user._id && (
- <Button
-  className={`!rounded-full !px-6 !py-4 ${
-    isFollowing
-      ? "!bg-gray-200 !text-black hover:!bg-gray-300"
-      : "!bg-black !text-white hover:!bg-gray-800"
-  }`}
-  loading={loadingUserId === post.author._id}
-  onClick={() => handleFollowToggle(post.author._id)}
->
-  {isFollowing ? "Following" : "Follow"}
-</Button>
-
-
-)}
+                  {user && post?.author && post.author._id !== user._id && (
+                    <Button
+                      className={`!rounded-full !px-6 !py-4 ${
+                        isFollowing
+                          ? "!bg-gray-200 !text-black hover:!bg-gray-300"
+                          : "!bg-black !text-white hover:!bg-gray-800"
+                      }`}
+                      loading={loadingUserId === post.author._id}
+                      onClick={() => handleFollowToggle(post.author._id)}
+                    >
+                      {isFollowing ? "Following" : "Follow"}
+                    </Button>
+                  )}
 
                   {user && post?.author && post.author._id !== user._id && (
                     <Dropdown
@@ -562,17 +551,17 @@ console.log({
 
               {/* Post image */}
               <div className="my-3">
-                <Image
-                  src={
-                    post.images?.length > 0
-                      ? post.images[0]
-                      : "/images/placeholder-image.png"
-                  }
-                  alt="Post image"
-                  width={800}
-                  height={300}
-                  className="rounded w-full object-cover mb-2 max-h-[300px] sm:max-h-[400px] object-top"
-                />
+                {Array.isArray(post?.images) &&
+                  post.images.length > 0 &&
+                  post.images[0] && (
+                    <Image
+                      src={post.images[0]}
+                      alt="Post image"
+                      width={800}
+                      height={300}
+                      className="rounded w-full object-cover mb-2 max-h-[300px] sm:max-h-[400px] object-top"
+                    />
+                  )}
               </div>
 
               {/* Content */}

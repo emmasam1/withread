@@ -30,7 +30,7 @@ const Page = () => {
       setLoading(true);
       const res = await axios.get(`${API_BASE_URL}/api/user/top-creators`);
       setTopCreators(res?.data?.data);
-      console.log(res?.data)
+      // console.log(res?.data)
     } catch (error) {
       console.log(error);
     } finally {
