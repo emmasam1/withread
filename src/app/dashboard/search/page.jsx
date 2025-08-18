@@ -1,13 +1,29 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { Tabs, Spin, Empty, Button, Drawer } from "antd";
 import { useApp } from "@/app/context/context";
 import Link from "next/link";
 import { FilterOutlined } from "@ant-design/icons";
 
-export default function SearchPage() {
+/* ---------- Page Wrapper with Suspense ---------- */
+export default function SearchPageWrapper() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-10">
+          <Spin size="large" />
+        </div>
+      }
+    >
+      <SearchPage />
+    </Suspense>
+  );
+}
+
+/* ---------- Main Search Page ---------- */
+function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const { performSearch, searchResults, searchLoading } = useApp();
@@ -51,16 +67,17 @@ export default function SearchPage() {
             Search results for:{" "}
             <span className="text-blue-500 break-words">{query}</span>
           </h1>
+
           {/* Mobile Filter Button */}
-         <div className="lg:hidden">
-           <Button
-            className="flex items-center"
-            icon={<FilterOutlined />}
-            onClick={() => setDrawerOpen(true)}
-          >
-            Filters
-          </Button>
-         </div>
+          <div className="lg:hidden">
+            <Button
+              className="flex items-center"
+              icon={<FilterOutlined />}
+              onClick={() => setDrawerOpen(true)}
+            >
+              Filters
+            </Button>
+          </div>
         </div>
 
         <Tabs

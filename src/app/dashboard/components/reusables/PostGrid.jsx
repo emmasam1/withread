@@ -34,7 +34,7 @@ const PostGrid = ({
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        console.log(res.data);
+        // console.log(res.data);
 
         if (res.data.success) {
           let content = [];

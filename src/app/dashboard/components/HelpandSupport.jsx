@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import ToggleSwitch from "./reusables/toggleStwich";
+import Link from "next/link";
 
 const HelpandSupport = () => {
   return (
@@ -34,6 +35,7 @@ const HelpandSupport = () => {
           width={10}
         />
       </div>
+     <Link href="/dashboard/settings//contactus">
       <div className="flex justify-between items-start py-5 border-b border-[#D0D0D033]">
         <div>
           <h1 className="font-medium">Contact Us</h1>
@@ -48,6 +50,7 @@ const HelpandSupport = () => {
           width={10}
         />
       </div>
+     </Link>
       <div className="flex justify-between items-start py-5 border-b border-[#D0D0D033]">
         <div>
           <h1 className="font-medium">Safety and Security</h1>

@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect, Suspense } from "react";
+import axios from "axios";
 import { useApp } from "../../context/context";
 import { toast } from "react-toastify";
 import Image from "next/image";
-import { Button, Tooltip } from "antd";
+import { Button, Tooltip, Skeleton } from "antd";
 import { motion } from "framer-motion";
 import UserPost from "../components/UserPost";
 import UserDraft from "../components/UserDraft";
@@ -12,11 +13,13 @@ import SavedPost from "../components/SaveedPost";
 import { EditOutlined } from "@ant-design/icons";
 import Communities from "../components/Communities";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 const ProfilePage = () => {
   const searchParams = useSearchParams();
   const { API_BASE_URL, setLoading, loading, user, token } = useApp();
   const [activeTab, setActiveTab] = useState("1");
+  const [userDetails, setUserDetails] = useState({});
 
   useEffect(() => {
     const tabFromURL = searchParams.get("tab");
@@ -37,18 +40,48 @@ const ProfilePage = () => {
 
   const activeIndex = tabs.findIndex((tab) => tab.key === activeTab);
 
+  const getUser = async () => {
+    try {
+      if (!token) return;
+      setLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUserDetails(res.data.user);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getUser();
+  }, [token]);
+
+  const formatNumber = (num) => {
+    if (!num) return 0;
+    if (num >= 1_000_000)
+      return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+    return num;
+  };
+
   return (
     <div className="p-3 bg-white">
       {/* Banner */}
       <div className="rounded-tl-lg rounded-tr-lg">
         <div className="relative">
-          <Tooltip title="Change Banner" placement="topLeft">
-            <div className="rounded-full h-10 w-10 absolute bg-gray-50 right-5 top-3 flex justify-center items-center cursor-pointer">
-              <EditOutlined className="text-lg" />
-            </div>
-          </Tooltip>
+          <Link href="/dashboard/settings?tab=2">
+            <Tooltip title="Change Banner" placement="topLeft">
+              <div className="rounded-full h-10 w-10 absolute bg-gray-50 right-5 top-3 flex justify-center items-center cursor-pointer">
+                <EditOutlined className="text-lg" />
+              </div>
+            </Tooltip>
+          </Link>
+
           <Image
-            src={user?.banner || "/images/banner.jpg"}
+            src={userDetails?.banner || "/images/banner.jpg"}
             alt="banner"
             width={1000}
             height={200}
@@ -62,23 +95,25 @@ const ProfilePage = () => {
         <div className="flex">
           {/* Avatar and Name */}
           <div className="flex flex-col items-center">
-            <div className="h-[120px] w-[120px] rounded-full border-2 border-gray-200 overflow-hidden relative -top-10">
-              <Image
-                src={user?.avatar || "/images/avatar.jpg"}
-                alt="user image"
-                width={500}
-                height={500}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-0 w-full bg-black/60 text-white text-xs text-center py-1 cursor-pointer">
-                Edit
+            <Link href="/dashboard/settings?tab=2">
+              <div className="h-[120px] w-[120px] rounded-full border-2 border-gray-200 overflow-hidden relative -top-10">
+                <Image
+                  src={userDetails?.avatar || "/images/avatar.jpg"}
+                  alt="user image"
+                  width={500}
+                  height={500}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 w-full bg-black/60 text-white text-xs text-center py-1 cursor-pointer">
+                  Edit
+                </div>
               </div>
-            </div>
-            <p className="mt-2 -left-3 !text-left text-2xl relative -top-10 font-bold">
-              {user?.firstName} {user?.lastName}
+            </Link>
+            <p className="mt-2 !text-left text-2xl relative -top-10 font-bold capitalize">
+              {userDetails?.firstName} {userDetails?.lastName}
             </p>
-            <p className="text-xl -left-1 relative -top-11 text-gray-400">
-              @{user?.username}
+            <p className="text-xl relative -top-11 text-gray-400">
+              @{userDetails?.username}
             </p>
           </div>
 
@@ -86,15 +121,19 @@ const ProfilePage = () => {
           <div className="ml-auto w-4/5 flex justify-between items-center relative -top-14">
             <div className="flex items-center gap-10">
               <p className="font-semibold">
-                4.3k <span className="font-light text-gray-400">Followers</span>
+                {formatNumber(userDetails?.followerCount)}{" "}
+                <span className="font-light text-gray-400">Followers</span>
               </p>
               <p className="font-semibold">
-                4.3k <span className="font-light text-gray-400">Following</span>
+                {formatNumber(userDetails?.followingCount)}{" "}
+                <span className="font-light text-gray-400">Following</span>
               </p>
             </div>
-            <Button className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2">
-              Edit Profile
-            </Button>
+            <Link href="/dashboard/settings?tab=2">
+              <Button className="!bg-black !text-[#D9D9D9] !border-0 !rounded-full !py-4 !px-4 flex gap-2">
+                Edit Profile
+              </Button>
+            </Link>
           </div>
         </div>
 

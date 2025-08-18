@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Account from "../components/Account";
 import Profile from "../components/Profile";
@@ -9,6 +10,7 @@ import HelpandSupport from "../components/HelpandSupport";
 
 const Page = () => {
   const [activeTab, setActiveTab] = useState("1");
+  const searchParams = useSearchParams();
 
   const tabs = [
     { key: "1", label: "About", content: <Account /> },
@@ -17,6 +19,13 @@ const Page = () => {
     { key: "4", label: "Notification", content: <Notification /> },
     { key: "5", label: "Help & Support", content: <HelpandSupport /> },
   ];
+
+   useEffect(() => {
+    const tabFromURL = searchParams.get("tab");
+    if (tabFromURL && tabs.find((t) => t.key === tabFromURL)) {
+      setActiveTab(tabFromURL);
+    }
+  }, [searchParams]);
 
   return (
     <div className="p-3">
